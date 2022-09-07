@@ -4,7 +4,6 @@
 .Ruserdata
 .Rprofile
 
-.gitignore
 _quarto.yml
 
 Data/
