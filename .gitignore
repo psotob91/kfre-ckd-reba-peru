@@ -2,6 +2,10 @@
 .Rhistory
 .RData
 .Ruserdata
+.Rprofile
+
+.gitignore
+_quarto.yml
 
 Data/
 Extra/
