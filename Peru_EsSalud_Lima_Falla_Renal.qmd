@@ -1,0 +1,3904 @@
+---
+title: "Validación externa de KFRE para pronostico de falla renal en asegurados de EsSalud"
+author: 
+  - name: Percy Soto-Becerra
+    url: https://github.com/psotob91
+date: last-modified
+lang: es
+format: 
+  html:
+    self-contained: true
+    number-sections: true
+    number-depth: 3
+    anchor-sections: true
+    code-fold: true
+    code-summary: "Mostrar código"
+    code-overflow: wrap
+    code-tools: true
+    code-link: true
+    # code-block-bg: "#f1f3f5"
+    code-block-border-left: "#31BAE9"
+    theme: 
+      light: journal
+      dark: darkly
+    highlight-style: espresso
+    mainfont: Source Sans Pro
+    html-math-method: katex
+    toc: true
+editor: visual
+
+execute: 
+  warning: false
+  message: false
+  error: false
+  echo: false
+  column: page
+---
+
+```{r}
+#| label: load-packages
+#| include: false
+
+# Use pacman to check whether packages are installed, if not load
+if (!require("pacman")) install.packages("pacman")
+library(pacman)
+
+pacman::p_unload("all")
+
+if (!require("BiocManager", quietly = TRUE)) {
+  install.packages("BiocManager")
+  BiocManager::install(version = "3.15")
+}
+
+if (!require("survcomp")) 
+    BiocManager::install("survcomp")
+
+pacman::p_load(
+  here, 
+  skimr, 
+  survival,
+  rms,
+  cmprsk,
+  riskRegression,
+  mstate,
+  pseudo,
+  pec,
+  riskRegression,
+  plotrix,
+  knitr,
+  splines,
+  kableExtra,
+  flextable,
+  gtsummary,
+  boot,
+  tidyverse,
+  rsample,
+  gridExtra,
+  webshot, 
+  patchwork,
+  survival, 
+  cmprsk, 
+  survminer, 
+  ggsci, 
+  cowplot, 
+  scales, 
+  patchwork, 
+  labelled, 
+  glue, 
+  dcurves, 
+  broom, 
+  downlit, 
+  xml2
+)
+
+data <- readRDS(here::here("Data/Derived/data_derived_v2.rds")) 
+
+# Data Stages 3-4
+data %>%  
+  filter(ckd_stage == "Stages 3-4") -> dataA
+
+# Data Stages 3b-4
+data %>%  
+  filter(ckd_stage2 == "Stages 3b-4") -> dataB
+```
+
+## Análisis descriptivo
+
+En total, `r nrow(dataA)` pacientes fueron incluidos en el análisis del grupo con ERC estadíos 3a-4 y `r nrow(dataB)` en el grupo ERC con estadíos 3b-4. Todos los pacientes tuvieron datos del desenlace. El número de eventos fue mayor a 100 en todas las poblaciones y desenlaces, a excepción de la falla renal a 2 años en la población con ERC estadíos 3b-4 (n = 88), por lo que los estimados en este grupo deben interpretarse con mucha más cautela. Específicamente, en el grupo ERC-3a-3b-4, `r table(dataA$eventd2y)[2]` (`r round(prop.table(table(dataA$eventd2y))[2] * 100, 1)`%) pacientes desarrollaron falla renal en 2 años y `r table(dataA$eventd5y)[2]` (`r round(prop.table(table(dataA$eventd5y))[2] * 100, 1)`%) en 5 años. Muchos más pacientes murieron sin experimentar falla renal: `r table(dataA$eventd2y)[3]` (`r round(prop.table(table(dataA$eventd2y))[3] * 100, 1)`%) en 2 años y `r table(dataA$eventd5y)[3]` (`r round(prop.table(table(dataA$eventd5y))[3] * 100, 1)`%) en 5 años.
+
+Respecto al grupo restringido a estadios ERC-3b-4, `r table(dataB$eventd2y)[2]` (`r round(prop.table(table(dataB$eventd2y))[2] * 100, 1)`%) pacientes desarrollaron falla renal en 2 años y `r table(dataB$eventd5y)[2]` (`r round(prop.table(table(dataB$eventd5y))[2] * 100, 1)`%) en 5 años. Del mismo modo, muchos más pacientes murieron sin experimentar falla renal: `r table(dataB$eventd2y)[3]` (`r round(prop.table(table(dataB$eventd2y))[3] * 100, 1)`%) en 2 años y `r table(dataB$eventd5y)[3]` (`r round(prop.table(table(dataB$eventd5y))[3] * 100, 1)`%) en 5 años.
+
+Todos los pacientes fueron censurados administrativamente el 31 de diciembre de 2019. La mediana de tiempo de observación fue de `r round(median(dataA$time, na.rm = TRUE), 1)` años el seguimiento máximo fue de `r round(max(dataA$time, na.rm = TRUE), 1)` años en el grupo ERC 3a-4. La mediana y máximo de tiempos de observación fue similar en el grupo con ERC 3b-4 con `r round(median(dataA$time, na.rm = TRUE), 1)` y `r round(max(dataA$time, na.rm = TRUE), 1)` años, respectivamente. En total, `r table(dataA$eventd2y)[1]` pacientes (`r round(prop.table(table(dataA$eventd2y))[1] * 100, 1)`%) fueron censurados administrativamente en 2 años y `r table(dataA$eventd5y)[1]` pacientes (`r round(prop.table(table(dataA$eventd5y))[1] * 100, 1)`%) en 5 años.
+
+### Tabla 1
+
+La [Tabla 1] describe a la población de estudio. Las [Tabla S1](#sec-tableS1) detalla las caracterísitcas de la población de estudio en estadios 3a-3b-4 según la ocurrencia del desenlace de interés falla renal a 2 y 5 años. El número de eventos de interés a 2 años fue de La [Tabla S2](#sec-tableS2) muestra esto mismo para la población 3b-4. La [Tabla S3](#sec-tableS3) describe las características según estadíso 3a, 3b y 4 por separado. Con esta estratificación, los números de casos de falla renal a 2 años son muy bajos para las subpoblaciones con estadíos 3a (n = `r table(data$eventd2y, data$grf_cat)[2, 1]`), 3b (n = `r table(data$eventd2y, data$grf_cat)[2, 2]`) y 4 (n = `r table(data$eventd2y, data$grf_cat)[2, 3]`). Del mismo modo, los números de casos a 5 años fueron muy bajos para las subpoblaciones con estadíos 3a (n = `r table(data$eventd5y, data$grf_cat)[2, 1]`), 3b (n = `r table(data$eventd5y, data$grf_cat)[2, 2]`) y 4 (n = `r table(data$eventd5y, data$grf_cat)[2, 3]`). Por tal motivo, no fue confiable realizar la evaluación del rendimiento predictivo en estos subgrupos.
+
+Por último, la [Tabla S4](#sec-tableS4) describe la distribución de la población de estudio en cada centro de salud de Lima.
+
+```{r}
+#| label: table1
+
+data %>%  
+  filter(ckd_stage == "Stages 3-4") %>% 
+  dplyr::select(total, sex, age, acr_cat, grf_cat, ckd_class, crea, eGFR_ckdepi, acr, 
+                urine_album, urine_crea, hta, dm, bmi, album35, hemog, 
+                sbp_control, dbp_control, death2y, eventd2ylab, death5y, eventd5ylab) %>% 
+  gtsummary::tbl_summary(
+  type = all_continuous() ~ "continuous2",
+  statistic = all_continuous() ~ c(
+    "{mean} ({sd})",
+    "{median} ({p25} - {p75})", 
+    "{min} - {max}"
+  ),
+  digits = list(all_continuous() ~ c(1, 1, 1, 1), 
+                all_categorical() ~ c(0, 1)), 
+  missing_text = "Missing"
+  ) %>% 
+  # add_p() %>% 
+  bold_labels() -> tab1a
+
+data %>%  
+  filter(ckd_stage2 == "Stages 3b-4") %>% 
+  mutate(
+    grf_cat = droplevels(grf_cat), 
+    ckd_class = droplevels(ckd_class)
+  ) %>% 
+  set_variable_labels(
+    grf_cat = "GFR categories", 
+    ckd_class = "CKD KDIGO classification"
+  ) %>% 
+  dplyr::select(total, sex, age, acr_cat, grf_cat, ckd_class, crea, eGFR_ckdepi, acr, 
+                urine_album, urine_crea, hta, dm, bmi, album35, hemog, 
+                sbp_control, dbp_control, death2y, eventd2ylab, death5y, 
+                eventd5ylab) %>% 
+  gtsummary::tbl_summary(
+  type = all_continuous() ~ "continuous2",
+  statistic = all_continuous() ~ c(
+    "{mean} ({sd})",
+    "{median} ({p25} - {p75})", 
+    "{min} - {max}"
+  ),
+  digits = list(all_continuous() ~ c(1, 1, 1, 1), 
+                all_categorical() ~ c(0, 1)), 
+  missing_text = "Missing"
+  ) %>% 
+  # add_p() %>% 
+  bold_labels() -> tab1b
+
+tbl_merge(list(tab1a, tab1b), 
+          tab_spanner = c("**CKD Stages 3a-3b-4**", "**CKD Stages 3b-4**")) %>% 
+  modify_caption("Table 1. Baseline characteristics of the study population according CKD Stages") %>% 
+  bold_labels() -> tab1
+
+tab1 %>% 
+  as_flex_table() %>% 
+  flextable::save_as_docx(path = "Tables/Table1.docx")
+
+tab1 %>% 
+  gtsummary::as_kable_extra() %>%
+  kableExtra::kable_styling("striped")
+```
+
+### Curvas de función de incidencia cumulada
+
+```{r}
+#| label: table2-code
+
+# Seleccion del grupo----
+group <- c("Stages 3-4")
+
+# Creacion de datsets para IA a 5 y 2 años
+data %>% 
+  filter(ckd_stage == group) -> data_filt
+
+# timepoints(cif, times = 1:5) #< Da lo mismo que usar crprep
+
+vdata.w1 <- crprep(
+  Tstop = "time5y",
+  status = "eventd5y",
+  trans = c(1, 2),
+  id = "id",
+  keep = c("age", "male", "eGFR_mdrd", "acr", "risk2y", "risk5y"),
+  data = data_filt
+)
+
+vdata.w1 <- vdata.w1 %>% filter(failcode == 1)
+vdata.w2 <- vdata.w1 %>% filter(failcode == 2)
+
+mfit_vdata1 <- survfit(
+  Surv(Tstart, Tstop, status == 1) ~ 1,
+  data = vdata.w1, 
+  weights = weight.cens
+)
+
+smfit_vdata1 <- summary(mfit_vdata1, times = c(1, 2, 3, 4, 5))
+
+res_ci_stg12 <- cbind(
+  100 * (1 - smfit_vdata1$surv),
+  100 * (1 - smfit_vdata1$upper),
+  100 * (1 - smfit_vdata1$lower)
+)
+
+res_ci_stg12 <- round(res_ci_stg12, 2)
+
+rownames(res_ci_stg12) <- c(
+  "1-year", "2-year",
+  "3-year", "4-year",
+  "5-year"
+)
+
+colnames(res_ci_stg12) <- c(
+  "Estimate", "Lower .95",
+  "Upper .95"
+)
+
+# Seleccion del grupo----
+group <- c("Stages 3b-4")
+
+# Creacion de datsets para IA a 5 y 2 años
+data %>% 
+  filter(ckd_stage2 == group) -> data_filt
+
+vdata.w1 <- crprep(
+  Tstop = "time5y",
+  status = "eventd5y",
+  trans = c(1, 2),
+  id = "id",
+  keep = c("age", "male", "eGFR_mdrd", "acr", "risk2y", "risk5y"),
+  data = data_filt
+)
+
+vdata.w1 <- vdata.w1 %>% filter(failcode == 1)
+vdata.w2 <- vdata.w1 %>% filter(failcode == 2)
+
+mfit_vdata1 <- survfit(
+  Surv(Tstart, Tstop, status == 1) ~ 1,
+  data = vdata.w1, 
+  weights = weight.cens
+)
+
+smfit_vdata1 <- summary(mfit_vdata1, times = c(1, 2, 3, 4, 5))
+
+res_ci_stg35 <- cbind(
+  100 * (1 - smfit_vdata1$surv),
+  100 * (1 - smfit_vdata1$upper),
+  100 * (1 - smfit_vdata1$lower)
+)
+
+res_ci_stg35  <- round(res_ci_stg35, 2)
+
+rownames(res_ci_stg35) <- c(
+  "1-year", "2-year",
+  "3-year", "4-year",
+  "5-year"
+)
+
+colnames(res_ci_stg35) <- c(
+  "Estimate", "Lower .95",
+  "Upper .95"
+)
+
+res_ci <- cbind(res_ci_stg12, res_ci_stg35)
+
+res_ci %>% 
+  as_tibble(rownames = "Year") %>% 
+  mutate(
+    est1 = str_glue("{Estimate}%"), 
+    est1.ci = str_glue(" ({`Lower .95`}% to {`Upper .95`}%)"), 
+    est2 = str_glue("{V4}%"), 
+    est2.ci = str_glue(" ({V5}% to {V6}%)")
+  ) %>% 
+  select(Year, est1, est1.ci, est2, est2.ci) %>% 
+  mutate(across(everything(), ~as.character(.x))) -> res_ci2 
+
+res_ci2 %>% 
+  flextable() %>% 
+  add_header_row(values = c("Year", "CKD Stages 3a-3b-4", "CKD Stages 3b-4"), colwidths = c(1, 2, 2)) %>% 
+  set_header_labels(
+    est1 = "%", 
+    est1.ci = "95% CI", 
+    est2 = "%", 
+    est2.ci = "95% CI" 
+  ) %>% 
+  merge_v(j = 1, part = "header") %>% 
+  set_caption("Table 2. Cumulative incidence of kidney failure") %>% 
+  theme_box() %>% 
+  autofit() -> tab_cif
+
+tab_cif %>% 
+  save_as_docx(path = "Tables/Table2.docx")
+```
+
+La incidencia acumulada estimada de falla renal a 2 años y a 5 años fue de `r res_ci2$est1[2]` `r res_ci2$est1.ci[2]` y `r res_ci2$est1[5]` `r res_ci2$est1.ci[5]` en pacientes con ERC estadíos 3a, 3b o 4, respectivamente. En pacientes con ERC 3b-4, las incidicencias acumuladas a 2 y 5 años fueron de `r res_ci2$est2[2]` `r res_ci2$est2.ci[2]` y `r res_ci2$est2[5]` `r res_ci2$est2.ci[5]`, respectivamente. La [Tabla S6](#sec-table6) detalla las incidencias acumuladas de falla renal 1 a 5 años en ambas cohortes.
+
+La @fig-cif muestra las curvas de incidencia acumulada de falla renal y muerte pre-falla renal en los pacientes del estudio.
+
+```{r}
+#| label: cif-1
+#| output: false
+
+# Seleccion del grupo----
+group <- c("Stages 3-4")
+
+# Creacion de datsets para IA a 5 y 2 años
+data %>% 
+  filter(ckd_stage == group) -> data_filt
+
+cuminc(ftime = data_filt$time5y, 
+       fstatus = data_filt$eventd5ylab, 
+       cencode = "Alive w/o Kidney Failure") -> cif
+
+ciplotdat <- 
+  cif %>% 
+  list_modify("Tests" = NULL) %>% 
+  map_df(`[`, c("time", "est", "var"), .id = "id") %>% 
+  mutate(id = recode(
+    id, 
+    "1 Death w/o Kidney Failure" = "Death w/o Kidney Failure", 
+    "1 Kidney Failure" = "Kidney Failure"), 
+    ll = est - 1.96 * sqrt(var), 
+    ul = est + 1.96 * sqrt(var)
+    ) %>% 
+  rename(
+    event = id
+  )
+
+ciplotdat %>% 
+  ggplot(aes(x = time, y = est)) +
+  geom_ribbon(aes(ymin = ll, ymax = ul, fill = event), 
+              alpha = 0.25, linetype = 0) + 
+  geom_step(lwd = 0.5, aes(color = event)) +
+  theme_survminer() +
+  scale_y_continuous(labels = scales::percent, limits = c(0, 1)) + 
+  labs(x = "Years", 
+       y = "Cumulative incidence",
+       title = "A CKD Stages 3a-3b-4") + 
+  theme(legend.position = "top",
+        legend.title = element_blank(), 
+        legend.background = element_rect(fill = "white"), 
+        legend.key.size = unit(0.2, "cm")) -> g1
+
+ciplotdat %>% 
+  filter(event == "Kidney Failure") %>%
+  ggplot(aes(x = time, y = est)) +
+  geom_ribbon(aes(ymin = ll, ymax = ul), fill = "#00BFC4", 
+              alpha = 0.1, linetype = 0) + 
+  geom_step(lwd = 0.5, color = "#00BFC4") +
+  theme_survminer() +
+  ylim(c(0, 0.025)) +
+  scale_y_continuous(labels = scales::percent, limits = c(0, 0.037)) + 
+  labs(x = "", 
+       y = "",
+       title = "") -> g2
+
+kf_fit <- survfit(
+  Surv(time5y, ifelse(eventd5y != 0, 1, 0)) ~ 1, 
+  data = data_filt
+)
+
+num <- ggsurvplot(
+  fit = kf_fit, 
+  risk.table = "nrisk_cumevents", 
+  risk.table.y.text = FALSE,
+  risk.table.y.text.col = FALSE, 
+  tables.y.text = FALSE, 
+  tables.y.text.col = FALSE, 
+  ylab = "Years",
+  risk.table.fontsize = 3.2,
+  tables.theme = theme_survminer(font.main = 10)
+  )
+
+cowplot::plot_grid(
+  g1, 
+  num$table + theme_cleantable(), 
+  nrow = 2, 
+  rel_heights = c(4, 1), 
+  align = "v", 
+  axis = "b"
+  ) -> g3
+  
+g3 + inset_element(g2, 0.15, 0.43, 1, 0.856,  align_to = 'full',  
+                   ignore_tag = TRUE) -> plot_cif_mh
+ 
+# Seleccion del grupo----
+group <- c("Stages 3b-4")
+
+# Creacion de datsets para IA a 5 y 2 años
+data %>% 
+  filter(ckd_stage2 == group) -> data_filt
+
+cuminc(ftime = data_filt$time5y, 
+       fstatus = data_filt$eventd5ylab, 
+       cencode = "Alive w/o Kidney Failure") -> cif
+
+ciplotdat <- 
+  cif %>% 
+  list_modify("Tests" = NULL) %>% 
+  map_df(`[`, c("time", "est", "var"), .id = "id") %>% 
+  mutate(id = recode(
+    id, 
+    "1 Death w/o Kidney Failure" = "Death w/o Kidney Failure", 
+    "1 Kidney Failure" = "Kidney Failure"), 
+    ll = est - 1.96 * sqrt(var), 
+    ul = est + 1.96 * sqrt(var)
+    ) %>% 
+  rename(
+    event = id
+  )
+
+ciplotdat %>% 
+  ggplot(aes(x = time, y = est)) +
+  geom_ribbon(aes(ymin = ll, ymax = ul, fill = event), 
+              alpha = 0.25, linetype = 0) + 
+  geom_step(lwd = 0.5, aes(color = event)) +
+  theme_survminer() +
+  scale_y_continuous(labels = scales::percent, limits = c(0, 1)) + 
+  labs(x = "Years", 
+       y = "Cumulative incidence",
+       title = "B CKD Stages 3b-4") + 
+  theme(legend.position = "top",
+        legend.title = element_blank(), 
+        legend.background = element_rect(fill = "white"), 
+        legend.key.size = unit(0.2, "cm")) -> g1
+
+ciplotdat %>% 
+  filter(event == "Kidney Failure") %>%
+  ggplot(aes(x = time, y = est)) +
+  geom_ribbon(aes(ymin = ll, ymax = ul), fill = "#00BFC4", 
+              alpha = 0.1, linetype = 0) + 
+  geom_step(lwd = 0.5, color = "#00BFC4") +
+  theme_survminer() +
+  ylim(c(0, 0.15)) +
+  scale_y_continuous(labels = scales::percent, limits = c(0, 0.19)) + 
+  labs(x = "", 
+       y = "",
+       title = "") -> g2
+
+kf_fit <- survfit(
+  Surv(time5y, ifelse(eventd5y != 0, 1, 0)) ~ 1, 
+  data = data_filt
+)
+
+num <- ggsurvplot(
+  fit = kf_fit, 
+  risk.table = "nrisk_cumevents", 
+  risk.table.y.text = FALSE,
+  risk.table.y.text.col = FALSE, 
+  tables.y.text = FALSE, 
+  tables.y.text.col = FALSE, 
+  ylab = "Years",
+  risk.table.fontsize = 3.2,
+  tables.theme = theme_survminer(font.main = 10)
+  )
+
+cowplot::plot_grid(
+  g1, 
+  num$table + theme_cleantable(), 
+  nrow = 2, 
+  rel_heights = c(4, 1), 
+  align = "v", 
+  axis = "b"
+  ) -> g3
+
+g3 + inset_element(g2, 0.15, 0.51, 1, 0.856,  align_to = 'full',  
+                   ignore_tag = TRUE) -> plot_cif_vh
+
+(plot_cif_mh / plot_cif_vh) + 
+  plot_annotation(tag_levels = 'A') -> plot_cif
+
+ggsave(filename = "Plot_CIF.png", 
+      plot = plot_cif, 
+      device = "png", 
+      path = "Figures", 
+      dpi = 300, 
+      scale = 2, 
+      width = 8.5,
+      height = 14, 
+      units = "cm", 
+      bg = "white")
+```
+
+```{r}
+#| label: fig-cif
+#| fig.width: 7
+#| fig.height: 14
+#| fig-cap: "Cumulative incidence curves of the observed outcome probabilities in the population study for kidney failure or deathd without kidney failure"
+
+plot_cif
+```
+
+```{r}
+#| label: cif-2
+#| output: false
+
+# Seleccion del grupo----
+group <- c("Stages 3-4")
+
+# Creacion de datsets para IA a 5 y 2 años
+data %>% 
+  filter(ckd_stage == group) -> data_filt
+
+cuminc(ftime = data_filt$time5y, 
+       fstatus = data_filt$eventd5ylab, 
+       cencode = "Alive w/o Kidney Failure") -> cif
+
+ciplotdat <- 
+  cif %>% 
+  list_modify("Tests" = NULL) %>% 
+  map_df(`[`, c("time", "est", "var"), .id = "id") %>% 
+  mutate(id = recode(
+    id, 
+    "1 Death w/o Kidney Failure" = "Muerte sin Falla Renal", 
+    "1 Kidney Failure" = "Falla Renal"), 
+    ll = est - 1.96 * sqrt(var), 
+    ul = est + 1.96 * sqrt(var)
+    ) %>% 
+  rename(
+    event = id
+  )
+
+ciplotdat %>% 
+  ggplot(aes(x = time, y = est)) +
+  geom_ribbon(aes(ymin = ll, ymax = ul, fill = event), 
+              alpha = 0.25, linetype = 0) + 
+  geom_step(lwd = 0.5, aes(color = event)) +
+  theme_survminer() +
+  scale_y_continuous(labels = scales::percent, limits = c(0, 1)) + 
+  labs(x = "Años", 
+       y = "Incidencia Acumulada",
+       title = "A ERC Estadios 3a-3b-4") + 
+  theme(legend.position = "top",
+        legend.title = element_blank(), 
+        legend.background = element_rect(fill = "white"), 
+        legend.key.size = unit(0.2, "cm")) -> g1
+
+ciplotdat %>% 
+  filter(event == "Falla Renal") %>%
+  ggplot(aes(x = time, y = est)) +
+  geom_ribbon(aes(ymin = ll, ymax = ul), fill = "#00BFC4", 
+              alpha = 0.1, linetype = 0) + 
+  geom_step(lwd = 0.5, color = "#00BFC4") +
+  theme_survminer() +
+  ylim(c(0, 0.025)) +
+  scale_y_continuous(labels = scales::percent, limits = c(0, 0.04)) + 
+  labs(x = "", 
+       y = "",
+       title = "") -> g2
+
+kf_fit <- survfit(
+  Surv(time5y, ifelse(eventd5y != 0, 1, 0)) ~ 1, 
+  data = data_filt
+)
+
+num <- ggsurvplot(
+  fit = kf_fit, 
+  risk.table = "nrisk_cumevents", 
+  risk.table.y.text = FALSE,
+  risk.table.y.text.col = FALSE, 
+  risk.table.title = "Número en riesgo (Número de eventos)", 
+  tables.y.text = FALSE, 
+  tables.y.text.col = FALSE, 
+  ylab = "Años",
+  risk.table.fontsize = 3.2,
+  tables.theme = theme_survminer(font.main = 10)
+  )
+
+cowplot::plot_grid(
+  g1, 
+  num$table + theme_cleantable(), 
+  nrow = 2, 
+  rel_heights = c(4, 1), 
+  align = "v", 
+  axis = "b"
+  ) -> g3
+  
+g3 + inset_element(g2, 0.15, 0.43, 1, 0.856,  align_to = 'full',  
+                   ignore_tag = TRUE) -> plot_cif_mh
+
+# Seleccion del grupo----
+group <- c("Stages 3b-4")
+
+# Creacion de datsets para IA a 5 y 2 años
+data %>% 
+  filter(ckd_stage2 == group) -> data_filt
+
+cuminc(ftime = data_filt$time5y, 
+       fstatus = data_filt$eventd5ylab, 
+       cencode = "Alive w/o Kidney Failure") -> cif
+
+ciplotdat <- 
+  cif %>% 
+  list_modify("Tests" = NULL) %>% 
+  map_df(`[`, c("time", "est", "var"), .id = "id") %>% 
+  mutate(id = recode(
+    id, 
+    "1 Death w/o Kidney Failure" = "Muerte sin Falla Renal", 
+    "1 Kidney Failure" = "Falla Renal"), 
+    ll = est - 1.96 * sqrt(var), 
+    ul = est + 1.96 * sqrt(var)
+    ) %>% 
+  rename(
+    event = id
+  )
+
+ciplotdat %>% 
+  ggplot(aes(x = time, y = est)) +
+  geom_ribbon(aes(ymin = ll, ymax = ul, fill = event), 
+              alpha = 0.25, linetype = 0) + 
+  geom_step(lwd = 0.5, aes(color = event)) +
+  theme_survminer() +
+  scale_y_continuous(labels = scales::percent, limits = c(0, 1)) + 
+  labs(x = "Años", 
+       y = "Incidencia Acumulada",
+       title = "B ERC Estadios 3b-4") + 
+  theme(legend.position = "top",
+        legend.title = element_blank(), 
+        legend.background = element_rect(fill = "white"), 
+        legend.key.size = unit(0.2, "cm")) -> g1
+
+ciplotdat %>% 
+  filter(event == "Falla Renal") %>%
+  ggplot(aes(x = time, y = est)) +
+  geom_ribbon(aes(ymin = ll, ymax = ul), fill = "#00BFC4", 
+              alpha = 0.1, linetype = 0) + 
+  geom_step(lwd = 0.5, color = "#00BFC4") +
+  theme_survminer() +
+  ylim(c(0, 0.15)) +
+  scale_y_continuous(labels = scales::percent, limits = c(0, 0.19)) + 
+  labs(x = "", 
+       y = "",
+       title = "") -> g2
+
+kf_fit <- survfit(
+  Surv(time5y, ifelse(eventd5y != 0, 1, 0)) ~ 1, 
+  data = data_filt
+)
+
+num <- ggsurvplot(
+  fit = kf_fit, 
+  risk.table = "nrisk_cumevents", 
+  risk.table.y.text = FALSE,
+  risk.table.y.text.col = FALSE, 
+  risk.table.title = "Número en riesgo (Número de eventos)", 
+  tables.y.text = FALSE, 
+  tables.y.text.col = FALSE, 
+  ylab = "Años",
+  risk.table.fontsize = 3.2,
+  tables.theme = theme_survminer(font.main = 10)
+  )
+
+cowplot::plot_grid(
+  g1, 
+  num$table + theme_cleantable(), 
+  nrow = 2, 
+  rel_heights = c(4, 1), 
+  align = "v", 
+  axis = "b"
+  ) -> g3
+
+g3 + inset_element(g2, 0.15, 0.51, 1, 0.856,  align_to = 'full',  
+                   ignore_tag = TRUE) -> plot_cif_vh
+
+(plot_cif_mh / plot_cif_vh) + 
+  plot_annotation(tag_levels = 'A') -> plot_cif
+
+ggsave(filename = "Plot_CIF_Spanish.png", 
+      plot = plot_cif, 
+      device = "png", 
+      path = "Figures", 
+      dpi = 300, 
+      scale = 2, 
+      width = 10,
+      height = 14, 
+      units = "cm", 
+      bg = "white")
+```
+
+## Evaluación de rendimiento predictivo:
+
+A continuación, reportaremos los resultados de evaluación del rendimiento predictivo del modelo KFRE para dos horizontes de predicción: 2 años y 5 años. Evaluamos tres aspectos del rendimiento predictivo:
+
+1)  Calibración del modelo
+
+2)  Discriminación del modelo
+
+3)  Rendimiento global
+
+::: {.callout-note collapse="true"}
+## Nota
+
+De acuerdo con las recomendaciones dadas por la guía [TRIPOD](https://www.acpjournals.org/doi/full/10.7326/M14-0698?rfr_dat=cr_pub++0pubmed&url_ver=Z39.88-2003&rfr_id=ori%3Arid%3Acrossref.org) (Transparent Reporting of multivariable prediction model for Individual Prognosis or Diagnosis), la validación (interna y externa) de todo modelo de predicción (diagnóstico o pronóstico) debería reportar al menos dos aspectos claves de su rendimiento predicitivo: calibración y discriminación. Adicionalmente, se puede optar por medidas de rendimiento global.
+:::
+
+### Calibración del modelo
+
+::: {.callout-note collapse="true"}
+## Nota
+
+Evaluamos calibración mediante:
+
+-   **Gráficos de calibración**:
+    -   Curvas suavizadas (mediante regresión local) y cinturón de calibración (intervalos de confianza al 95%) de proporción observada versus probabilidad predicha por modelo.
+    -   La proporción observada puede ser estimada por varios métodos que tienen en cuenta el riesgo competitivo. Nosotros usamos dos métodos: (1) método de pseudovalores (análisis principal) y (2) método de subdistribución de hazards (análisis de sensibilidad). Los resultados de ambos fueron similares.
+-   **Medidas numéricas de calibración**:
+    -   Razón de eventos acumulados observados entre esperados (Razón O/E)
+    -   Calibration Slope y Calibration intercept
+:::
+
+#### Métricas de calibración
+
+En general, el modelo mostró evidencia de descalibraicón [Table 2].
+
+##### Calibration in the large - Razón O/E
+
+Calibration in the large es una métrica de calibración que resumen si el modelo predice bien en promedio los riesgos. Para el modelo a 2 años, el riesgo absoluto observado de falla renal fue de 1.52% en la población de 3a-3b-4 mientras que el promedio de riesgo predicho por el modelo fue menor: 0.96%. La razón de outcomes observados y esperados fue de 1.58 (95% CI 1.30 a 1.76), lo que indica que, en promedio, las predicciones subestimaron el riesgo real de falla renal. Una subestimación de riesgo ligeramente menor fue encontrada para el modelo a 2 años en la población con falla renal 3b-4 (O/E = 1.34; 95% CI 1.13 a 1.54).
+
+Por el contrario, el riesgo observado de falla renal fue ligeramente superior pero similar al riesgo predicho promedio por el modelo a 5 años en población con estadío 3a-3b-4 (O/E = 1.06; 95% CI 0.94 a 1.19). Del mismo modo, el riesgo observado de falla renal fue ligeramente inferior pero similar al riesgo predicho promedio por el modelo a 5 años en población con estadío 3b-4 con un O/E de 0.9 (95% CI 0.76 a 1.04).
+
+```{r}
+#| label: calibracion-in-the-large
+
+# Calibration (O/E) -------------------------------------------------------
+
+# Seleccion del grupo: Stages 3-4----
+group <- c("Stages 3-4")
+
+data %>% 
+  filter(ckd_stage == group) -> data_filt
+
+vdata <- data_filt %>% 
+  select(id, risk2y, risk5y, time5y, eventd5y) %>%  
+  drop_na() %>%  
+  mutate(status = factor(eventd5y, 
+                         levels = c(0, 1, 2), 
+                         labels = c("Alive w/o Kidney Failure", 
+                                    "Kidney Failure", 
+                                    "Death w/o Kidney Failure")))
+primary_event <- 1
+
+# A 2 años----
+horizon <- 2
+
+vdata$pred <- vdata$risk2y
+
+# First calculate Aalen-Johansen estimate (as 'observed')
+obj <- summary(survfit(Surv(time5y, status) ~ 1, 
+                        data = vdata), 
+                times = horizon)
+
+aj <- list(
+  "obs" = obj$pstate[, primary_event + 1],
+  "se" = obj$std.err[, primary_event + 1]
+)
+
+
+# Calculate O/E
+OE <- aj$obs / mean(vdata$pred)
+
+# For the confidence interval we use method proposed in Debray et al. (2017) doi:10.1136/bmj.i6460
+k <- 2
+alpha <- 0.05
+OE_summary <- cbind(
+  "OE" = OE,
+  "Lower .95" = exp(log(OE - qnorm(1 - alpha / 2) * aj$se / aj$obs)),
+  "Upper .95" = exp(log(OE + qnorm(1 - alpha / 2) * aj$se / aj$obs))
+)
+
+OE_summary2a <- round(OE_summary, k)
+
+avg_obs <- cbind(
+  "avg_obs" = aj$obs * 100,
+  "Lower .95" = 100 * (aj$obs - qnorm(1 - alpha / 2) * aj$se),
+  "Upper .95" = 100 * (aj$obs + qnorm(1 - alpha / 2) * aj$se)
+)
+
+avg_pred <- cbind(
+  "avg_pred" = mean(vdata$pred) * 100
+)
+
+avg_obs2a <- round(avg_obs, k)
+avg_pred2a <- round(avg_pred, k)
+
+# Seleccion del grupo: Stages 3-4----
+group <- c("Stages 3-4")
+
+data %>% 
+  filter(ckd_stage == group) -> data_filt
+
+vdata <- data_filt %>% 
+  select(id, risk2y, risk5y, time5y, eventd5y) %>%  
+  drop_na() %>%  
+  mutate(status = factor(eventd5y, 
+                         levels = c(0, 1, 2), 
+                         labels = c("Alive w/o Kidney Failure", 
+                                    "Kidney Failure", 
+                                    "Death w/o Kidney Failure")))
+primary_event <- 1
+
+# A 5 años----
+horizon <- 5
+
+# Add estimated risk and complementary log-log of it to dataset
+vdata$pred <- vdata$risk5y
+
+
+
+# First calculate Aalen-Johansen estimate (as 'observed')
+obj <- summary(survfit(Surv(time5y, status) ~ 1, 
+                        data = vdata), 
+                times = horizon)
+
+aj <- list(
+  "obs" = obj$pstate[, primary_event + 1],
+  "se" = obj$std.err[, primary_event + 1]
+)
+
+
+# Calculate O/E
+OE <- aj$obs / mean(vdata$pred)
+
+# For the confidence interval we use method proposed in Debray et al. (2017) doi:10.1136/bmj.i6460
+k <- 2
+alpha <- 0.05
+OE_summary <- cbind(
+  "OE" = OE,
+  "Lower .95" = exp(log(OE - qnorm(1 - alpha / 2) * aj$se / aj$obs)),
+  "Upper .95" = exp(log(OE + qnorm(1 - alpha / 2) * aj$se / aj$obs))
+)
+
+OE_summary5a <- round(OE_summary, k)
+
+avg_obs <- cbind(
+  "avg_obs" = aj$obs * 100,
+  "Lower .95" = 100 * (aj$obs - qnorm(1 - alpha / 2) * aj$se),
+  "Upper .95" = 100 * (aj$obs + qnorm(1 - alpha / 2) * aj$se)
+)
+
+avg_pred <- cbind(
+  "avg_pred" = mean(vdata$pred) * 100
+)
+
+avg_obs5a <- round(avg_obs, k)
+avg_pred5a <- round(avg_pred, k)
+
+# Seleccion del grupo: Stages 3b-4----
+group <- c("Stages 3b-4")
+
+data %>% 
+  filter(ckd_stage2 == group) -> data_filt
+
+vdata <- data_filt %>% 
+  select(id, risk2y, risk5y, time5y, eventd5y) %>%  
+  drop_na() %>%  
+  mutate(status = factor(eventd5y, 
+                         levels = c(0, 1, 2), 
+                         labels = c("Alive w/o Kidney Failure", 
+                                    "Kidney Failure", 
+                                    "Death w/o Kidney Failure")))
+primary_event <- 1
+
+# A 2 años----
+horizon <- 2
+
+# Add estimated risk and complementary log-log of it to dataset
+vdata$pred <- vdata$risk2y
+
+
+# First calculate Aalen-Johansen estimate (as 'observed')
+obj <- summary(survfit(Surv(time5y, status) ~ 1, 
+                        data = vdata), 
+                times = horizon)
+
+aj <- list(
+  "obs" = obj$pstate[, primary_event + 1],
+  "se" = obj$std.err[, primary_event + 1]
+)
+
+# Calculate O/E
+OE <- aj$obs / mean(vdata$pred)
+
+# For the confidence interval we use method proposed in Debray et al. (2017) doi:10.1136/bmj.i6460
+k <- 2
+alpha <- 0.05
+OE_summary <- cbind(
+  "OE" = OE,
+  "Lower .95" = exp(log(OE - qnorm(1 - alpha / 2) * aj$se / aj$obs)),
+  "Upper .95" = exp(log(OE + qnorm(1 - alpha / 2) * aj$se / aj$obs))
+)
+
+OE_summary2b <- round(OE_summary, k)
+
+avg_obs <- cbind(
+  "avg_obs" = aj$obs * 100,
+  "Lower .95" = 100 * (aj$obs - qnorm(1 - alpha / 2) * aj$se),
+  "Upper .95" = 100 * (aj$obs + qnorm(1 - alpha / 2) * aj$se)
+)
+
+avg_pred <- cbind(
+  "avg_pred" = mean(vdata$pred) * 100
+)
+
+avg_obs2b <- round(avg_obs, k)
+avg_pred2b <- round(avg_pred, k)
+
+# Seleccion del grupo: Stages 3b-4----
+group <- c("Stages 3b-4")
+
+data %>% 
+  filter(ckd_stage2 == group) -> data_filt
+
+vdata <- data_filt %>% 
+  select(id, risk2y, risk5y, time5y, eventd5y) %>%  
+  drop_na() %>%  
+  mutate(status = factor(eventd5y, 
+                         levels = c(0, 1, 2), 
+                         labels = c("Alive w/o Kidney Failure", 
+                                    "Kidney Failure", 
+                                    "Death w/o Kidney Failure")))
+primary_event <- 1
+
+# A 5 años----
+horizon <- 5
+
+# Add estimated risk and complementary log-log of it to dataset
+vdata$pred <- vdata$risk5y
+
+
+# First calculate Aalen-Johansen estimate (as 'observed')
+obj <- summary(survfit(Surv(time5y, status) ~ 1, 
+                        data = vdata), 
+                times = horizon)
+
+aj <- list(
+  "obs" = obj$pstate[, primary_event + 1],
+  "se" = obj$std.err[, primary_event + 1]
+)
+
+
+# Calculate O/E
+OE <- aj$obs / mean(vdata$pred)
+
+# For the confidence interval we use method proposed in Debray et al. (2017) doi:10.1136/bmj.i6460
+k <- 2
+alpha <- 0.05
+OE_summary <- cbind(
+  "OE" = OE,
+  "Lower .95" = exp(log(OE - qnorm(1 - alpha / 2) * aj$se / aj$obs)),
+  "Upper .95" = exp(log(OE + qnorm(1 - alpha / 2) * aj$se / aj$obs))
+)
+
+OE_summary5b <- round(OE_summary, k)
+
+avg_obs <- cbind(
+  "avg_obs" = aj$obs * 100,
+  "Lower .95" = 100 * (aj$obs - qnorm(1 - alpha / 2) * aj$se),
+  "Upper .95" = 100 * (aj$obs + qnorm(1 - alpha / 2) * aj$se)
+)
+
+avg_pred <- cbind(
+  "avg_pred" = mean(vdata$pred) * 100
+)
+
+avg_obs5b <- round(avg_obs, k)
+avg_pred5b <- round(avg_pred, k)
+```
+
+##### Calibration intercept y slope
+
+```{r}
+#| label: calibration-intercept-slope
+
+# Seleccion del grupo: Stages 3-4----
+group <- c("Stages 3-4")
+
+data %>% 
+  filter(ckd_stage == group) -> data_filt
+
+vdata <- data_filt %>% 
+  select(id, risk2y, risk5y, time5y, eventd5y) %>%  
+  drop_na() %>%  
+  mutate(status = factor(eventd5y, 
+                         levels = c(0, 1, 2), 
+                         labels = c("Alive w/o Kidney Failure", 
+                                    "Kidney Failure", 
+                                    "Death w/o Kidney Failure")))
+primary_event <- 1
+
+# A 2 años----
+horizon <- 2
+
+# Add estimated risk and complementary log-log of it to dataset
+vdata$pred <- vdata$risk2y
+
+# First compute riskRegression::Score()
+score_vdata <- Score(
+  list("csh_validation" = vdata$pred),
+  formula = Hist(time5y, eventd5y) ~ 1,
+  cens.model = "km",
+  data = vdata,
+  conf.int = TRUE,
+  times = horizon,
+  #  metrics = c("auc", "brier"),
+  summary = c("ipa"),
+  cause = primary_event,
+  plots = "calibration"
+)
+
+# Use pseudo-observations calculated by Score() (can alternatively use pseudo::pseudoci)
+pseudos <- data.frame(score_vdata$Calibration$plotframe)
+
+# Note:
+# - 'pseudos' is the data.frame with ACTUAL pseudo-observations, not the smoothed ones
+# - Column ID is not the id in vdata; it is just a number assigned to each row of
+# the original validation data sorted by time and event indicator
+pseudos$cll_pred <- log(-log(1 - pseudos$risk)) # add the cloglog risk ests
+
+# Fit model for calibration intercept
+fit_cal_int <- geese(
+  pseudovalue ~ offset(cll_pred),
+  data = pseudos,
+  id = ID,
+  scale.fix = TRUE,
+  family = gaussian,
+  mean.link = "cloglog",
+  corstr = "independence",
+  jack = TRUE
+)
+
+# Fit model for calibration slope
+fit_cal_slope <- geese(
+  pseudovalue ~ offset(cll_pred) + cll_pred,
+  data = pseudos,
+  id = ID,
+  scale.fix = TRUE,
+  family = gaussian,
+  mean.link = "cloglog",
+  corstr = "independence",
+  jack = TRUE
+)
+```
+
+La prueba conjunta de mala calibración reveló lo siguiente:
+
+```{r}
+# Perform joint test on intercept and slope
+betas <- fit_cal_slope$beta
+vcov_mat <- fit_cal_slope$vbeta
+wald <- drop(betas %*% solve(vcov_mat) %*% betas)
+pchisq(wald, df = 2, lower.tail = FALSE)
+```
+
+```{r}
+k <- 2
+res_cal <- rbind(
+
+  # Value, confidence interval and test for calibration intercept
+  "Intercept, Stages 3-4, 2 year" = with(
+    summary(fit_cal_int)$mean,
+    c(
+      "estimate" = estimate,
+      `2.5 %` = estimate - qnorm(0.975) * san.se,
+      `97.5 %` = estimate + qnorm(0.975) * san.se
+    )
+  ),
+
+  # Value, confidence interval and test for calibration slope
+  "Slope, Stages 3-4, 2 year" = with(
+    summary(fit_cal_slope)$mean["cll_pred", ],
+    c(
+      "estimate" = 1 + estimate,
+      `2.5 %` = 1 + (estimate - qnorm(0.975) * san.se),
+      `97.5 %` = 1 + (estimate + qnorm(0.975) * san.se)
+    )
+  )
+)
+
+res_cal2a <- round(res_cal, k)
+
+# A 5 años----
+horizon <- 5
+
+# Add estimated risk and complementary log-log of it to dataset
+vdata$pred <- vdata$risk5y
+
+# First compute riskRegression::Score()
+score_vdata <- Score(
+  list("csh_validation" = vdata$pred),
+  formula = Hist(time5y, eventd5y) ~ 1,
+  cens.model = "km",
+  data = vdata,
+  conf.int = TRUE,
+  times = horizon,
+  #  metrics = c("auc", "brier"),
+  summary = c("ipa"),
+  cause = primary_event,
+  plots = "calibration"
+)
+
+# Use pseudo-observations calculated by Score() (can alternatively use pseudo::pseudoci)
+pseudos <- data.frame(score_vdata$Calibration$plotframe)
+
+# Note:
+# - 'pseudos' is the data.frame with ACTUAL pseudo-observations, not the smoothed ones
+# - Column ID is not the id in vdata; it is just a number assigned to each row of
+# the original validation data sorted by time and event indicator
+pseudos$cll_pred <- log(-log(1 - pseudos$risk)) # add the cloglog risk ests
+
+# Fit model for calibration intercept
+fit_cal_int <- geese(
+  pseudovalue ~ offset(cll_pred),
+  data = pseudos,
+  id = ID,
+  scale.fix = TRUE,
+  family = gaussian,
+  mean.link = "cloglog",
+  corstr = "independence",
+  jack = TRUE
+)
+
+# Fit model for calibration slope
+fit_cal_slope <- geese(
+  pseudovalue ~ offset(cll_pred) + cll_pred,
+  data = pseudos,
+  id = ID,
+  scale.fix = TRUE,
+  family = gaussian,
+  mean.link = "cloglog",
+  corstr = "independence",
+  jack = TRUE
+)
+```
+
+La prueba conjunta de mala calibración reveló lo siguiente:
+
+```{r}
+# Perform joint test on intercept and slope
+betas <- fit_cal_slope$beta
+vcov_mat <- fit_cal_slope$vbeta
+wald <- drop(betas %*% solve(vcov_mat) %*% betas)
+pchisq(wald, df = 2, lower.tail = FALSE)
+```
+
+```{r}
+k <- 2
+res_cal <- rbind(
+
+  # Value, confidence interval and test for calibration intercept
+  "Intercept, Stages 3-4, 5 year" = with(
+    summary(fit_cal_int)$mean,
+    c(
+      "estimate" = estimate,
+      `2.5 %` = estimate - qnorm(0.975) * san.se,
+      `97.5 %` = estimate + qnorm(0.975) * san.se
+    )
+  ),
+
+  # Value, confidence interval and test for calibration slope
+  "Slope, Stages 3-4, 5 year" = with(
+    summary(fit_cal_slope)$mean["cll_pred", ],
+    c(
+      "estimate" = 1 + estimate,
+      `2.5 %` = 1 + (estimate - qnorm(0.975) * san.se),
+      `97.5 %` = 1 + (estimate + qnorm(0.975) * san.se)
+    )
+  )
+)
+
+res_cal5a <- round(res_cal, k)
+
+# Seleccion del grupo: Stages 3b-4----
+group <- c("Stages 3b-4")
+
+# Creacion de datsets para IA a 5 y 2 años
+data %>% 
+  filter(ckd_stage2 == group) -> data_filt
+
+vdata <- data_filt %>% 
+  select(id, risk2y, risk5y, time5y, eventd5y) %>%  
+  drop_na() %>%  
+  mutate(status = factor(eventd5y, 
+                         levels = c(0, 1, 2), 
+                         labels = c("Alive w/o Kidney Failure", 
+                                    "Kidney Failure", 
+                                    "Death w/o Kidney Failure")))
+primary_event <- 1
+
+# A 2 años----
+horizon <- 2
+
+# Add estimated risk and complementary log-log of it to dataset
+vdata$pred <- vdata$risk2y
+
+# First compute riskRegression::Score()
+score_vdata <- Score(
+  list("csh_validation" = vdata$pred),
+  formula = Hist(time5y, eventd5y) ~ 1,
+  cens.model = "km",
+  data = vdata,
+  conf.int = TRUE,
+  times = horizon,
+  #  metrics = c("auc", "brier"),
+  summary = c("ipa"),
+  cause = primary_event,
+  plots = "calibration"
+)
+
+# Use pseudo-observations calculated by Score() (can alternatively use pseudo::pseudoci)
+pseudos <- data.frame(score_vdata$Calibration$plotframe)
+
+# Note:
+# - 'pseudos' is the data.frame with ACTUAL pseudo-observations, not the smoothed ones
+# - Column ID is not the id in vdata; it is just a number assigned to each row of
+# the original validation data sorted by time and event indicator
+pseudos$cll_pred <- log(-log(1 - pseudos$risk)) # add the cloglog risk ests
+
+# Fit model for calibration intercept
+fit_cal_int <- geese(
+  pseudovalue ~ offset(cll_pred),
+  data = pseudos,
+  id = ID,
+  scale.fix = TRUE,
+  family = gaussian,
+  mean.link = "cloglog",
+  corstr = "independence",
+  jack = TRUE
+)
+
+# Fit model for calibration slope
+fit_cal_slope <- geese(
+  pseudovalue ~ offset(cll_pred) + cll_pred,
+  data = pseudos,
+  id = ID,
+  scale.fix = TRUE,
+  family = gaussian,
+  mean.link = "cloglog",
+  corstr = "independence",
+  jack = TRUE
+)
+```
+
+La prueba conjunta de mala calibración reveló lo siguiente:
+
+```{r}
+# Perform joint test on intercept and slope
+betas <- fit_cal_slope$beta
+vcov_mat <- fit_cal_slope$vbeta
+wald <- drop(betas %*% solve(vcov_mat) %*% betas)
+pchisq(wald, df = 2, lower.tail = FALSE)
+```
+
+```{r}
+k <- 2
+res_cal <- rbind(
+
+  # Value, confidence interval and test for calibration intercept
+  "Intercept, Stages 3b-4, 2 year" = with(
+    summary(fit_cal_int)$mean,
+    c(
+      "estimate" = estimate,
+      `2.5 %` = estimate - qnorm(0.975) * san.se,
+      `97.5 %` = estimate + qnorm(0.975) * san.se
+    )
+  ),
+
+  # Value, confidence interval and test for calibration slope
+  "Slope, Stages 3b-4, 2 year" = with(
+    summary(fit_cal_slope)$mean["cll_pred", ],
+    c(
+      "estimate" = 1 + estimate,
+      `2.5 %` = 1 + (estimate - qnorm(0.975) * san.se),
+      `97.5 %` = 1 + (estimate + qnorm(0.975) * san.se)
+    )
+  )
+)
+
+res_cal2b <- round(res_cal, k)
+
+# A 5 años----
+horizon <- 5
+vdata$pred <- vdata$risk5y
+
+# First compute riskRegression::Score()
+score_vdata <- Score(
+  list("csh_validation" = vdata$pred),
+  formula = Hist(time5y, eventd5y) ~ 1,
+  cens.model = "km",
+  data = vdata,
+  conf.int = TRUE,
+  times = horizon,
+  #  metrics = c("auc", "brier"),
+  summary = c("ipa"),
+  cause = primary_event,
+  plots = "calibration"
+)
+
+# Use pseudo-observations calculated by Score() (can alternatively use pseudo::pseudoci)
+pseudos <- data.frame(score_vdata$Calibration$plotframe)
+
+# Note:
+# - 'pseudos' is the data.frame with ACTUAL pseudo-observations, not the smoothed ones
+# - Column ID is not the id in vdata; it is just a number assigned to each row of
+# the original validation data sorted by time and event indicator
+pseudos$cll_pred <- log(-log(1 - pseudos$risk)) # add the cloglog risk ests
+
+# Fit model for calibration intercept
+fit_cal_int <- geese(
+  pseudovalue ~ offset(cll_pred),
+  data = pseudos,
+  id = ID,
+  scale.fix = TRUE,
+  family = gaussian,
+  mean.link = "cloglog",
+  corstr = "independence",
+  jack = TRUE
+)
+
+# Fit model for calibration slope
+fit_cal_slope <- geese(
+  pseudovalue ~ offset(cll_pred) + cll_pred,
+  data = pseudos,
+  id = ID,
+  scale.fix = TRUE,
+  family = gaussian,
+  mean.link = "cloglog",
+  corstr = "independence",
+  jack = TRUE
+)
+```
+
+La prueba conjunta de mala calibración reveló lo siguiente:
+
+```{r}
+# Perform joint test on intercept and slope
+betas <- fit_cal_slope$beta
+vcov_mat <- fit_cal_slope$vbeta
+wald <- drop(betas %*% solve(vcov_mat) %*% betas)
+pchisq(wald, df = 2, lower.tail = FALSE)
+```
+
+```{r}
+k <- 2
+res_cal <- rbind(
+
+  # Value, confidence interval and test for calibration intercept
+  "Intercept, Stages 3b-4, 5 year" = with(
+    summary(fit_cal_int)$mean,
+    c(
+      "estimate" = estimate,
+      `2.5 %` = estimate - qnorm(0.975) * san.se,
+      `97.5 %` = estimate + qnorm(0.975) * san.se
+    )
+  ),
+
+  # Value, confidence interval and test for calibration slope
+  "Slope, Stages 3b-4, 5 year" = with(
+    summary(fit_cal_slope)$mean["cll_pred", ],
+    c(
+      "estimate" = 1 + estimate,
+      `2.5 %` = 1 + (estimate - qnorm(0.975) * san.se),
+      `97.5 %` = 1 + (estimate + qnorm(0.975) * san.se)
+    )
+  )
+)
+
+res_cal5b <- round(res_cal, k)
+```
+
+#### Curvas y cinturón de calibración usando pseudovalues y lowess
+
+```{r}
+#| label: loess-pseudo
+
+# Seleccion del grupo: Stages 4-5----
+group <- c("Stages 3-4")
+
+# Creacion de datsets para IA a 5 y 2 años
+data %>% 
+  filter(ckd_stage == group) -> data_filt
+
+vdata <- data_filt %>% 
+  select(id, risk2y, risk5y, time5y, eventd5y) %>%  
+  drop_na()
+
+primary_event <- 1
+
+# A 2 años----
+horizon <- 2
+
+# Add estimated risk and complementary log-log of it to dataset
+vdata$pred <- vdata$risk2y
+pred <- as.matrix(vdata$pred)
+
+# Calibration plot (pseudo-obs approach) ----------------------------------
+# First compute riskRegression::Score()
+score_vdata <- Score(
+  list("csh_validation" = pred),
+  formula = Hist(time5y, eventd5y) ~ 1,
+  cens.model = "km",
+  data = vdata,
+  conf.int = TRUE,
+  times = horizon,
+  #  metrics = c("auc", "brier"),
+  summary = c("ipa"),
+  cause = primary_event,
+  plots = "calibration"
+)
+
+# Use pseudo-observations calculated by Score() (can alternatively use pseudo::pseudoci)
+pseudos <- data.frame(score_vdata$Calibration$plotframe)
+pseudos <- pseudos[order(pseudos$risk), ]
+
+# Use linear loess (weighted local regression with polynomial degree = 1) smoothing
+smooth_pseudos <- predict(
+  stats::loess(pseudovalue ~ risk, data = pseudos, degree = 1, span = 0.33), 
+  se = TRUE
+)
+
+pseudo_vals <- data.frame(
+  obs = smooth_pseudos$fit, 
+  risk = pseudos$risk, 
+  se = smooth_pseudos$se, 
+  df = smooth_pseudos$df
+  ) %>% 
+  mutate(
+    ll = pmax(obs - qt(0.975, df) * se, 0), 
+    ul = obs + qt(0.975, df) * se
+  )
+
+pseudo_vals %>% 
+  ggplot(aes(x = risk, y = obs)) +
+  geom_ribbon(aes(ymin = ll, ymax = ul), fill = "grey90") + 
+  geom_abline(intercept = 0, slope = 1, colour = "red", linetype = 2) + 
+  geom_line() + 
+  scale_y_continuous(breaks = seq(0, 1, 0.2), limits = c(0, 1)) + 
+  scale_x_continuous(breaks = seq(0, 1, 0.2), limits = c(0, 1)) + 
+  theme_bw() + 
+  xlab("Predicted risks") + 
+  ylab("Observed outcome proportions") -> p1
+
+# Seleccion del grupo: Stages 4-5----
+group <- c("Stages 3-4")
+
+# Creacion de datsets para IA a 5 y 2 años
+data %>% 
+  filter(ckd_stage == group) -> data_filt
+
+vdata <- data_filt %>% 
+  select(id, risk2y, risk5y, time5y, eventd5y) %>%  
+  drop_na()
+
+primary_event <- 1
+
+# A 5 años----
+horizon <- 5
+
+# Add estimated risk and complementary log-log of it to dataset
+vdata$pred <- vdata$risk5y
+pred <- as.matrix(vdata$pred)
+
+# Calibration plot (pseudo-obs approach) ----------------------------------
+# First compute riskRegression::Score()
+score_vdata <- Score(
+  list("csh_validation" = pred),
+  formula = Hist(time5y, eventd5y) ~ 1,
+  cens.model = "km",
+  data = vdata,
+  conf.int = TRUE,
+  times = horizon,
+  #  metrics = c("auc", "brier"),
+  summary = c("ipa"),
+  cause = primary_event,
+  plots = "calibration"
+)
+
+# Use pseudo-observations calculated by Score() (can alternatively use pseudo::pseudoci)
+pseudos <- data.frame(score_vdata$Calibration$plotframe)
+pseudos <- pseudos[order(pseudos$risk), ]
+
+# Use linear loess (weighted local regression with polynomial degree = 1) smoothing
+smooth_pseudos <- predict(
+  stats::loess(pseudovalue ~ risk, data = pseudos, degree = 1, span = 0.33), 
+  se = TRUE
+)
+
+pseudo_vals <- data.frame(
+  obs = smooth_pseudos$fit, 
+  risk = pseudos$risk, 
+  se = smooth_pseudos$se, 
+  df = smooth_pseudos$df
+  ) %>% 
+  mutate(
+    ll = pmax(obs - qt(0.975, df) * se, 0), 
+    ul = obs + qt(0.975, df) * se
+  )
+
+pseudo_vals %>% 
+  ggplot(aes(x = risk, y = obs)) +
+  geom_ribbon(aes(ymin = ll, ymax = ul), fill = "grey90") + 
+  geom_abline(intercept = 0, slope = 1, colour = "red", linetype = 2) + 
+  geom_line() + 
+  scale_y_continuous(breaks = seq(0, 1, 0.2), limits = c(0, 1)) + 
+  scale_x_continuous(breaks = seq(0, 1, 0.2), limits = c(0, 1)) +   
+  xlab("Predicted risks") + 
+  ylab("Observed outcome proportions") + 
+  theme_bw() -> p2
+
+# Seleccion del grupo: Stages 4-5----
+group <- c("Stages 3b-4")
+
+# Creacion de datsets para IA a 5 y 2 años
+data %>% 
+  filter(ckd_stage2 == group) -> data_filt
+
+vdata <- data_filt %>% 
+  select(id, risk2y, risk5y, time5y, eventd5y) %>%  
+  drop_na()
+
+primary_event <- 1
+
+# A 2 años----
+horizon <- 2
+
+# Add estimated risk and complementary log-log of it to dataset
+vdata$pred <- vdata$risk2y
+pred <- as.matrix(vdata$pred)
+
+# Calibration plot (pseudo-obs approach) ----------------------------------
+# First compute riskRegression::Score()
+score_vdata <- Score(
+  list("csh_validation" = pred),
+  formula = Hist(time5y, eventd5y) ~ 1,
+  cens.model = "km",
+  data = vdata,
+  conf.int = TRUE,
+  times = horizon,
+  #  metrics = c("auc", "brier"),
+  summary = c("ipa"),
+  cause = primary_event,
+  plots = "calibration"
+)
+
+# Use pseudo-observations calculated by Score() (can alternatively use pseudo::pseudoci)
+pseudos <- data.frame(score_vdata$Calibration$plotframe)
+pseudos <- pseudos[order(pseudos$risk), ]
+
+# Use linear loess (weighted local regression with polynomial degree = 1) smoothing
+smooth_pseudos <- predict(
+  stats::loess(pseudovalue ~ risk, data = pseudos, degree = 1, span = 0.33), 
+  se = TRUE
+)
+
+pseudo_vals <- data.frame(
+  obs = smooth_pseudos$fit, 
+  risk = pseudos$risk, 
+  se = smooth_pseudos$se, 
+  df = smooth_pseudos$df
+  ) %>% 
+  mutate(
+    ll = pmax(obs - qt(0.975, df) * se, 0), 
+    ul = obs + qt(0.975, df) * se
+  )
+
+pseudo_vals %>% 
+  ggplot(aes(x = risk, y = obs)) +
+  geom_ribbon(aes(ymin = ll, ymax = ul), fill = "grey90") + 
+  geom_abline(intercept = 0, slope = 1, colour = "red", linetype = 2) + 
+  geom_line() + 
+  scale_y_continuous(breaks = seq(0, 1, 0.2), limits = c(0, 1)) + 
+  scale_x_continuous(breaks = seq(0, 1, 0.2), limits = c(0, 1)) + 
+  theme_bw() + 
+  xlab("Predicted risks") + 
+  ylab("Observed outcome proportions") -> p3
+
+# Seleccion del grupo: Stages 4-5----
+group <- c("Stages 3b-4")
+
+# Creacion de datsets para IA a 5 y 2 años
+data %>% 
+  filter(ckd_stage2 == group) -> data_filt
+
+vdata <- data_filt %>% 
+  select(id, risk2y, risk5y, time5y, eventd5y) %>%  
+  drop_na()
+
+primary_event <- 1
+
+# A 5 años----
+horizon <- 5
+
+# Add estimated risk and complementary log-log of it to dataset
+vdata$pred <- vdata$risk5y
+pred <- as.matrix(vdata$pred)
+
+# Calibration plot (pseudo-obs approach) ----------------------------------
+# First compute riskRegression::Score()
+score_vdata <- Score(
+  list("csh_validation" = pred),
+  formula = Hist(time5y, eventd5y) ~ 1,
+  cens.model = "km",
+  data = vdata,
+  conf.int = TRUE,
+  times = horizon,
+  #  metrics = c("auc", "brier"),
+  summary = c("ipa"),
+  cause = primary_event,
+  plots = "calibration"
+)
+
+# Use pseudo-observations calculated by Score() (can alternatively use pseudo::pseudoci)
+pseudos <- data.frame(score_vdata$Calibration$plotframe)
+pseudos <- pseudos[order(pseudos$risk), ]
+
+# Use linear loess (weighted local regression with polynomial degree = 1) smoothing
+smooth_pseudos <- predict(
+  stats::loess(pseudovalue ~ risk, data = pseudos, degree = 1, span = 0.33), 
+  se = TRUE
+)
+
+pseudo_vals <- data.frame(
+  obs = smooth_pseudos$fit, 
+  risk = pseudos$risk, 
+  se = smooth_pseudos$se, 
+  df = smooth_pseudos$df
+  ) %>% 
+  mutate(
+    ll = pmax(obs - qt(0.975, df) * se, 0), 
+    ul = obs + qt(0.975, df) * se
+  )
+
+pseudo_vals %>% 
+  ggplot(aes(x = risk, y = obs)) +
+  geom_ribbon(aes(ymin = ll, ymax = ul), fill = "grey90") + 
+  geom_abline(intercept = 0, slope = 1, colour = "red", linetype = 2) + 
+  geom_line() + 
+  scale_y_continuous(breaks = seq(0, 1, 0.2), limits = c(0, 1)) + 
+  scale_x_continuous(breaks = seq(0, 1, 0.2), limits = c(0, 1)) +   
+  xlab("Predicted risks") + 
+  ylab("Observed outcome proportions") + 
+  theme_bw() -> p4
+
+p1a <- p1 + 
+  labs(title = "CKD Stages 3a-3b-4\n(2 year KFRE)") + 
+  theme(plot.title = element_text(hjust = 0.5))
+p2a <- p2 + labs(title = "CKD Stages 3a-3b-4\n(5 year KFRE)") + 
+  theme(plot.title = element_text(hjust = 0.5))
+p3a <- p3 + labs(title = "CKD Stages 3b-4\n(2 year KFRE)") + 
+  theme(plot.title = element_text(hjust = 0.5))
+p4a <- p4 + labs(title = "CKD Stages 3b-4\n(5 year KFRE)") + 
+  theme(plot.title = element_text(hjust = 0.5))
+
+(p1a | p2a) / (p3a | p4a) + plot_annotation(tag_levels = 'A') -> plot_calibration
+
+ggsave(filename = "Plot_Calibration.png", 
+       device = "png", 
+       plot = plot_calibration, 
+       path = "Figures", 
+       scale = 2, 
+       dpi = 300)
+```
+
+```{r}
+#| label: fig-loess-pseudo-ggpplot
+#| fig.width: 7
+#| fig.height: 7
+#| fig.align: center
+#| fig-cap: "Calibration plots for each group and prediction horizon. The predicted probability is shown on the x asis, and the observed kindey failure rate is given on the y axis"
+plot_calibration
+```
+
+```{r}
+#| label: loess-pseudo-spanish
+
+# Seleccion del grupo: Stages 4-5----
+group <- c("Stages 3-4")
+
+# Creacion de datsets para IA a 5 y 2 años
+data %>% 
+  filter(ckd_stage == group) -> data_filt
+
+vdata <- data_filt %>% 
+  select(id, risk2y, risk5y, time5y, eventd5y) %>%  
+  drop_na()
+
+primary_event <- 1
+
+# A 2 años----
+horizon <- 2
+
+# Add estimated risk and complementary log-log of it to dataset
+vdata$pred <- vdata$risk2y
+pred <- as.matrix(vdata$pred)
+
+# Calibration plot (pseudo-obs approach) ----------------------------------
+# First compute riskRegression::Score()
+score_vdata <- Score(
+  list("csh_validation" = pred),
+  formula = Hist(time5y, eventd5y) ~ 1,
+  cens.model = "km",
+  data = vdata,
+  conf.int = TRUE,
+  times = horizon,
+  #  metrics = c("auc", "brier"),
+  summary = c("ipa"),
+  cause = primary_event,
+  plots = "calibration"
+)
+
+# Use pseudo-observations calculated by Score() (can alternatively use pseudo::pseudoci)
+pseudos <- data.frame(score_vdata$Calibration$plotframe)
+pseudos <- pseudos[order(pseudos$risk), ]
+
+# Use linear loess (weighted local regression with polynomial degree = 1) smoothing
+smooth_pseudos <- predict(
+  stats::loess(pseudovalue ~ risk, data = pseudos, degree = 1, span = 0.33), 
+  se = TRUE
+)
+
+pseudo_vals <- data.frame(
+  obs = smooth_pseudos$fit, 
+  risk = pseudos$risk, 
+  se = smooth_pseudos$se, 
+  df = smooth_pseudos$df
+  ) %>% 
+  mutate(
+    ll = pmax(obs - qt(0.975, df) * se, 0), 
+    ul = obs + qt(0.975, df) * se
+  )
+
+pseudo_vals %>% 
+  ggplot(aes(x = risk, y = obs)) +
+  geom_ribbon(aes(ymin = ll, ymax = ul), fill = "grey90") + 
+  geom_abline(intercept = 0, slope = 1, colour = "red", linetype = 2) + 
+  geom_line() + 
+  scale_y_continuous(breaks = seq(0, 1, 0.2), limits = c(0, 1)) + 
+  scale_x_continuous(breaks = seq(0, 1, 0.2), limits = c(0, 1)) + 
+  theme_bw() + 
+  xlab("Riesgos predichos") + 
+  ylab("Riesgos observados del desenlace") -> p1
+
+# Seleccion del grupo: Stages 4-5----
+group <- c("Stages 3-4")
+
+# Creacion de datsets para IA a 5 y 2 años
+data %>% 
+  filter(ckd_stage == group) -> data_filt
+
+vdata <- data_filt %>% 
+  select(id, risk2y, risk5y, time5y, eventd5y) %>%  
+  drop_na()
+
+primary_event <- 1
+
+# A 5 años----
+horizon <- 5
+
+# Add estimated risk and complementary log-log of it to dataset
+vdata$pred <- vdata$risk5y
+pred <- as.matrix(vdata$pred)
+
+# Calibration plot (pseudo-obs approach) ----------------------------------
+# First compute riskRegression::Score()
+score_vdata <- Score(
+  list("csh_validation" = pred),
+  formula = Hist(time5y, eventd5y) ~ 1,
+  cens.model = "km",
+  data = vdata,
+  conf.int = TRUE,
+  times = horizon,
+  #  metrics = c("auc", "brier"),
+  summary = c("ipa"),
+  cause = primary_event,
+  plots = "calibration"
+)
+
+# Use pseudo-observations calculated by Score() (can alternatively use pseudo::pseudoci)
+pseudos <- data.frame(score_vdata$Calibration$plotframe)
+pseudos <- pseudos[order(pseudos$risk), ]
+
+# Use linear loess (weighted local regression with polynomial degree = 1) smoothing
+smooth_pseudos <- predict(
+  stats::loess(pseudovalue ~ risk, data = pseudos, degree = 1, span = 0.33), 
+  se = TRUE
+)
+
+pseudo_vals <- data.frame(
+  obs = smooth_pseudos$fit, 
+  risk = pseudos$risk, 
+  se = smooth_pseudos$se, 
+  df = smooth_pseudos$df
+  ) %>% 
+  mutate(
+    ll = pmax(obs - qt(0.975, df) * se, 0), 
+    ul = obs + qt(0.975, df) * se
+  )
+
+pseudo_vals %>% 
+  ggplot(aes(x = risk, y = obs)) +
+  geom_ribbon(aes(ymin = ll, ymax = ul), fill = "grey90") + 
+  geom_abline(intercept = 0, slope = 1, colour = "red", linetype = 2) + 
+  geom_line() + 
+  scale_y_continuous(breaks = seq(0, 1, 0.2), limits = c(0, 1)) + 
+  scale_x_continuous(breaks = seq(0, 1, 0.2), limits = c(0, 1)) +   
+  xlab("Riesgos predichos") + 
+  ylab("Riesgos observados del desenlace") + 
+  theme_bw() -> p2
+
+# Seleccion del grupo: Stages 4-5----
+group <- c("Stages 3b-4")
+
+# Creacion de datsets para IA a 5 y 2 años
+data %>% 
+  filter(ckd_stage2 == group) -> data_filt
+
+vdata <- data_filt %>% 
+  select(id, risk2y, risk5y, time5y, eventd5y) %>%  
+  drop_na()
+
+primary_event <- 1
+
+# A 2 años----
+horizon <- 2
+
+# Add estimated risk and complementary log-log of it to dataset
+vdata$pred <- vdata$risk2y
+pred <- as.matrix(vdata$pred)
+
+# Calibration plot (pseudo-obs approach) ----------------------------------
+# First compute riskRegression::Score()
+score_vdata <- Score(
+  list("csh_validation" = pred),
+  formula = Hist(time5y, eventd5y) ~ 1,
+  cens.model = "km",
+  data = vdata,
+  conf.int = TRUE,
+  times = horizon,
+  #  metrics = c("auc", "brier"),
+  summary = c("ipa"),
+  cause = primary_event,
+  plots = "calibration"
+)
+
+# Use pseudo-observations calculated by Score() (can alternatively use pseudo::pseudoci)
+pseudos <- data.frame(score_vdata$Calibration$plotframe)
+pseudos <- pseudos[order(pseudos$risk), ]
+
+# Use linear loess (weighted local regression with polynomial degree = 1) smoothing
+smooth_pseudos <- predict(
+  stats::loess(pseudovalue ~ risk, data = pseudos, degree = 1, span = 0.33), 
+  se = TRUE
+)
+
+pseudo_vals <- data.frame(
+  obs = smooth_pseudos$fit, 
+  risk = pseudos$risk, 
+  se = smooth_pseudos$se, 
+  df = smooth_pseudos$df
+  ) %>% 
+  mutate(
+    ll = pmax(obs - qt(0.975, df) * se, 0), 
+    ul = obs + qt(0.975, df) * se
+  )
+
+pseudo_vals %>% 
+  ggplot(aes(x = risk, y = obs)) +
+  geom_ribbon(aes(ymin = ll, ymax = ul), fill = "grey90") + 
+  geom_abline(intercept = 0, slope = 1, colour = "red", linetype = 2) + 
+  geom_line() + 
+  scale_y_continuous(breaks = seq(0, 1, 0.2), limits = c(0, 1)) + 
+  scale_x_continuous(breaks = seq(0, 1, 0.2), limits = c(0, 1)) + 
+  theme_bw() + 
+  xlab("Riesgos predichos") + 
+  ylab("Riesgos observados del desenlace") -> p3
+
+# Seleccion del grupo: Stages 4-5----
+group <- c("Stages 3b-4")
+
+# Creacion de datsets para IA a 5 y 2 años
+data %>% 
+  filter(ckd_stage2 == group) -> data_filt
+
+vdata <- data_filt %>% 
+  select(id, risk2y, risk5y, time5y, eventd5y) %>%  
+  drop_na()
+
+primary_event <- 1
+
+# A 5 años----
+horizon <- 5
+
+# Add estimated risk and complementary log-log of it to dataset
+vdata$pred <- vdata$risk5y
+pred <- as.matrix(vdata$pred)
+
+# Calibration plot (pseudo-obs approach) ----------------------------------
+# First compute riskRegression::Score()
+score_vdata <- Score(
+  list("csh_validation" = pred),
+  formula = Hist(time5y, eventd5y) ~ 1,
+  cens.model = "km",
+  data = vdata,
+  conf.int = TRUE,
+  times = horizon,
+  #  metrics = c("auc", "brier"),
+  summary = c("ipa"),
+  cause = primary_event,
+  plots = "calibration"
+)
+
+# Use pseudo-observations calculated by Score() (can alternatively use pseudo::pseudoci)
+pseudos <- data.frame(score_vdata$Calibration$plotframe)
+pseudos <- pseudos[order(pseudos$risk), ]
+
+# Use linear loess (weighted local regression with polynomial degree = 1) smoothing
+smooth_pseudos <- predict(
+  stats::loess(pseudovalue ~ risk, data = pseudos, degree = 1, span = 0.33), 
+  se = TRUE
+)
+
+pseudo_vals <- data.frame(
+  obs = smooth_pseudos$fit, 
+  risk = pseudos$risk, 
+  se = smooth_pseudos$se, 
+  df = smooth_pseudos$df
+  ) %>% 
+  mutate(
+    ll = pmax(obs - qt(0.975, df) * se, 0), 
+    ul = obs + qt(0.975, df) * se
+  )
+
+pseudo_vals %>% 
+  ggplot(aes(x = risk, y = obs)) +
+  geom_ribbon(aes(ymin = ll, ymax = ul), fill = "grey90") + 
+  geom_abline(intercept = 0, slope = 1, colour = "red", linetype = 2) + 
+  geom_line() + 
+  scale_y_continuous(breaks = seq(0, 1, 0.2), limits = c(0, 1)) + 
+  scale_x_continuous(breaks = seq(0, 1, 0.2), limits = c(0, 1)) +   
+  xlab("Riesgos predichos") + 
+  ylab("Riesgos observados del desenlace") + 
+  theme_bw() -> p4
+
+p1a <- p1 + 
+  labs(title = "ERC Estadios 3a-3b-4\n(KFRE a 2 años)") + 
+  theme(plot.title = element_text(hjust = 0.5))
+p2a <- p2 + labs(title = "ERC Estadios 3a-3b-4\n(KFRE a 5 años)") + 
+  theme(plot.title = element_text(hjust = 0.5))
+p3a <- p3 + labs(title = "ERC Estadios 3b-4\n(KFRE a 2 años)") + 
+  theme(plot.title = element_text(hjust = 0.5))
+p4a <- p4 + labs(title = "ERC Estadios 3b-4\n(KFRE a 5 años)") + 
+  theme(plot.title = element_text(hjust = 0.5))
+
+(p1a | p2a) / (p3a | p4a) + plot_annotation(tag_levels = 'A') -> plot_calibration
+
+ggsave(filename = "Plot_Calibration_Spanish.png", 
+       device = "png", 
+       plot = plot_calibration, 
+       path = "Figures", 
+       scale = 2, 
+       dpi = 300)
+```
+
+```{r}
+# library(rsample)
+# library(infer)
+# # We can extract predicted and observed, observed will depend on degree of smoothing (bandwidth)
+# dat_pseudo <- pseudo_vals %>% 
+#   select(obs, risk)
+# 
+# pred <- dat_pseudo$risk
+# 
+# # Calculate difference between predicted and observed (make sure to use all estimated risks, not just unique ones)
+# diff_pseudo <- pred - dat_pseudo$obs[match(pred, dat_pseudo$risk)]
+# 
+# # Cargar funcion 
+# source("Code/R/fit_modcal.R")
+# 
+# abs(diff_pseudo) %>% 
+#   as_tibble() %>% 
+#   fit_modcal(value = value, metric = "mean", nround = 3, nreps = 100) -> ici
+# 
+# abs(diff_pseudo) %>% 
+#   as_tibble() %>% 
+#   fit_modcal(value = value, metric = "median", nround = 3, nreps = 100) -> e50
+# 
+# bootP90 <- function(data, indices) median(data[indices])
+# 
+# bootMax <- function(data, indices) max(data[indices])
+# 
+# b90 <- boot(abs(diff_pseudo), bootMedian, R = 100)
+# bMax <- boot(abs(diff_pseudo), bootMax, R = 100)
+# 
+# # Collect all numerical summary measures
+# numsum_pseudo <- c(
+#   "ICI" = ici,
+#   setNames(quantile(abs(diff_pseudo), c(0.5, 0.9)), c("E50", "E90")),
+#   "Emax" = max(abs(diff_pseudo)),
+#   "Root squared bias" = sqrt(mean(diff_pseudo^2))
+# )
+# 
+# k <- 4
+# res_num <- rbind(
+#   "Calibration measures - pseudo observations" = numsum_pseudo
+# )
+# 
+# # res_num <- round(res_num, k)
+# kable(res_num) |>
+#   kable_styling("striped", position = "center")
+```
+
+```{r}
+# library(rsample)
+# library(infer)
+# 
+# fit_modcal <- function(data, value, metric, nround, nreps, ...) {
+#   
+#   data %>% 
+#     specify(response = value) %>% 
+#     calculate(stat = metric) %>% 
+#     as.numeric() %>% 
+#     round(nround) -> stat_res
+#   
+#   data %>% 
+#     specify(response = value) %>% 
+#     generate(reps = nreps, type = "bootstrap") %>% 
+#     calculate(stat = metric) %>% 
+#     get_confidence_interval(type = "percentile") %>% 
+#     round(nround) %>% 
+#     as.numeric() -> stat_ic
+#   
+#   paste0(stat_res, " (", stat_ic[1], " to ", stat_ic[2], ")") -> cal_res
+#   return(cal_res)
+# }
+# 
+# abs(diff_pseudo) %>% 
+#   as_tibble() %>% 
+#   fit_modcal(value = value, metric = "mean", nround = 3, nreps = 100)
+```
+
+```{r}
+# ICI$ICI[[2]]
+```
+
+### Discriminación del modelo
+
+En general, los modelos tuvieron buena discriminación [Table 2].
+
+#### C-index y C/D AUC tiempo dependiente
+
+En población con estadios 3a-3b-4, el estadístico C fue de 0.853 para discriminar falla renal a 2 años y ligeramente menor para 5 años: 0.827. Valores similares fueron reportados para la población con estadios 3b-4. Consistentemente, las áreas bajo la curva ROC tiempo-dependientes (C/D AUC) tuvieron valores similares para discriminar a 2 y 5 años.
+
+```{r}
+#| label: c-index
+#| warning: false
+#| message: false
+
+B <- 100
+
+# Seleccion del grupo: Stages 3b-4----
+group <- c("Stages 3b-4")
+
+data %>% 
+  filter(ckd_stage2 == group) -> data_filt
+
+vdata <- data_filt %>% 
+  select(id, risk2y, risk5y, time5y, eventd5y) %>%  
+  drop_na() %>%  
+  mutate(status = factor(eventd5y, 
+                         levels = c(0, 1, 2), 
+                         labels = c("Alive w/o Kidney Failure", 
+                                    "Kidney Failure", 
+                                    "Death w/o Kidney Failure")), 
+         status_num = eventd5y)
+
+primary_event <- 1
+
+# A 2 años----
+vdata$pred <- vdata$risk2y
+horizon <- 2 
+pred <- as.matrix(vdata$pred)
+
+# Validation set
+C_vdata <- pec::cindex(
+  object = list("CauseSpecificCox" = pred),
+  formula = Hist(time5y, eventd5y) ~ 1,
+  cause = primary_event,
+  eval.times = horizon,
+  data = vdata
+)$AppCindex$CauseSpecificCox
+
+# Bootstraping C-index to calculate the bootstrap percentile confidence intervals
+set.seed(777)
+
+C_boot <- function(B, data) {
+  cstat <- c()
+  n <- nrow(data)
+  for (i in 1:B) {
+    ids <- sample(1:n, n, TRUE)
+    data_boot <- data[ids, ]
+    
+    pec::cindex(
+    object = list("CauseSpecificCox" = as.matrix(data_boot$pred)),
+    formula = Hist(time5y, status_num) ~ 1,
+    cause = primary_event,
+    eval.times = horizon,
+    data = data_boot
+    )$AppCindex$CauseSpecificCox -> cstat[i]
+  }
+  return(cstat)
+}
+set.seed(777)
+C_vdata_boot <- C_boot(B = B, data = vdata)
+
+# Time-dependent AUC ---------
+
+# Validation data
+score_vdata <- Score(
+  list("csh_validation" = pred),
+  formula = Hist(time5y, status_num) ~ 1,
+  cens.model = "km",
+  data = vdata,
+  conf.int = TRUE,
+  times = horizon,
+  metrics = c("auc"),
+  cause = primary_event,
+  plots = "calibration"
+)
+
+alpha <- .05
+k <- 3
+res_discr_csh <- matrix(c(
+  ## C-index
+  # Validation CSH1
+  C_vdata,
+  quantile(C_vdata_boot, probs = alpha / 2),
+  quantile(C_vdata_boot, probs = 1 - alpha / 2),
+
+  ## Time-dependent AUC
+  # Validation CSH1
+  score_vdata$AUC$score$AUC,
+  score_vdata$AUC$score$AUC - qnorm(1 - alpha / 2) * score_vdata$AUC$score$se,
+  score_vdata$AUC$score$AUC + qnorm(1 - alpha / 2) * score_vdata$AUC$score$se
+  ),
+  nrow = 2, ncol = 3, byrow = T,
+  dimnames = list(
+  c("C-index, Stages 3b-4, 2 year", "Time dependent AUC, Stages 3b-4, 2 year"),
+  c("Estimate", "Lower .95", "Upper .95")
+  )
+  )
+
+res_discr_csh2b <- round(res_discr_csh, k)
+
+# Seleccion del grupo: Stages 3b-4----
+group <- c("Stages 3b-4")
+
+data %>% 
+  filter(ckd_stage2 == group) -> data_filt
+
+vdata <- data_filt %>% 
+  select(id, risk2y, risk5y, time5y, eventd5y) %>%  
+  drop_na() %>%  
+  mutate(status = factor(eventd5y, 
+                         levels = c(0, 1, 2), 
+                         labels = c("Alive w/o Kidney Failure", 
+                                    "Kidney Failure", 
+                                    "Death w/o Kidney Failure")), 
+         status_num = eventd5y)
+
+primary_event <- 1
+
+# A 5 años----
+vdata$pred <- vdata$risk5y
+horizon <- 5 
+pred <- as.matrix(vdata$pred)
+
+# Validation set
+C_vdata <- pec::cindex(
+  object = list("CauseSpecificCox" = pred),
+  formula = Hist(time5y, eventd5y) ~ 1,
+  cause = primary_event,
+  eval.times = horizon,
+  data = vdata
+)$AppCindex$CauseSpecificCox
+
+# Bootstraping C-index to calculate the bootstrap percentile confidence intervals
+set.seed(777)
+
+C_boot <- function(B, data) {
+  cstat <- c()
+  n <- nrow(data)
+  for (i in 1:B) {
+    ids <- sample(1:n, n, TRUE)
+    data_boot <- data[ids, ]
+    
+    pec::cindex(
+    object = list("CauseSpecificCox" = as.matrix(data_boot$pred)),
+    formula = Hist(time5y, status_num) ~ 1,
+    cause = primary_event,
+    eval.times = horizon,
+    data = data_boot
+    )$AppCindex$CauseSpecificCox -> cstat[i]
+  }
+  return(cstat)
+}
+set.seed(777)
+C_vdata_boot <- C_boot(B = B, data = vdata)
+
+# Time-dependent AUC ---------
+
+# Validation data
+score_vdata <- Score(
+  list("csh_validation" = pred),
+  formula = Hist(time5y, status_num) ~ 1,
+  cens.model = "km",
+  data = vdata,
+  conf.int = TRUE,
+  times = horizon,
+  metrics = c("auc"),
+  cause = primary_event,
+  plots = "calibration"
+)
+
+alpha <- .05
+k <- 3
+res_discr_csh <- matrix(c(
+  ## C-index
+  # Validation CSH1
+  C_vdata,
+  quantile(C_vdata_boot, probs = alpha / 2),
+  quantile(C_vdata_boot, probs = 1 - alpha / 2),
+
+  ## Time-dependent AUC
+  # Validation CSH1
+  score_vdata$AUC$score$AUC,
+  score_vdata$AUC$score$AUC - qnorm(1 - alpha / 2) * score_vdata$AUC$score$se,
+  score_vdata$AUC$score$AUC + qnorm(1 - alpha / 2) * score_vdata$AUC$score$se
+  ),
+  nrow = 2, ncol = 3, byrow = T,
+  dimnames = list(
+  c("C-index, Stages 3b-4, 5 year", "Time dependent AUC, Stages 3b-4, 5 year"),
+  c("Estimate", "Lower .95", "Upper .95")
+  )
+  )
+
+res_discr_csh5b <- round(res_discr_csh, k)
+
+# Seleccion del grupo: Stages 3b-4----
+group <- c("Stages 3-4")
+
+data %>% 
+  filter(ckd_stage == group) -> data_filt
+
+vdata <- data_filt %>% 
+  select(id, risk2y, risk5y, time5y, eventd5y) %>%  
+  drop_na() %>%  
+  mutate(status = factor(eventd5y, 
+                         levels = c(0, 1, 2), 
+                         labels = c("Alive w/o Kidney Failure", 
+                                    "Kidney Failure", 
+                                    "Death w/o Kidney Failure")), 
+         status_num = eventd5y)
+
+primary_event <- 1
+
+# A 2 años----
+vdata$pred <- vdata$risk2y
+horizon <- 2 
+pred <- as.matrix(vdata$pred)
+
+# Validation set
+C_vdata <- pec::cindex(
+  object = list("CauseSpecificCox" = pred),
+  formula = Hist(time5y, eventd5y) ~ 1,
+  cause = primary_event,
+  eval.times = horizon,
+  data = vdata
+)$AppCindex$CauseSpecificCox
+
+# Bootstraping C-index to calculate the bootstrap percentile confidence intervals
+set.seed(777)
+
+C_boot <- function(B, data) {
+  cstat <- c()
+  n <- nrow(data)
+  for (i in 1:B) {
+    ids <- sample(1:n, n, TRUE)
+    data_boot <- data[ids, ]
+    
+    pec::cindex(
+    object = list("CauseSpecificCox" = as.matrix(data_boot$pred)),
+    formula = Hist(time5y, status_num) ~ 1,
+    cause = primary_event,
+    eval.times = horizon,
+    data = data_boot
+    )$AppCindex$CauseSpecificCox -> cstat[i]
+  }
+  return(cstat)
+}
+
+set.seed(777)
+C_vdata_boot <- C_boot(B = B, data = vdata)
+
+# Time-dependent AUC ---------
+
+# Validation data
+score_vdata <- Score(
+  list("csh_validation" = pred),
+  formula = Hist(time5y, status_num) ~ 1,
+  cens.model = "km",
+  data = vdata,
+  conf.int = TRUE,
+  times = horizon,
+  metrics = c("auc"),
+  cause = primary_event,
+  plots = "calibration"
+)
+
+alpha <- .05
+k <- 3
+res_discr_csh <- matrix(c(
+  ## C-index
+  # Validation CSH1
+  C_vdata,
+  quantile(C_vdata_boot, probs = alpha / 2),
+  quantile(C_vdata_boot, probs = 1 - alpha / 2),
+
+  ## Time-dependent AUC
+  # Validation CSH1
+  score_vdata$AUC$score$AUC,
+  score_vdata$AUC$score$AUC - qnorm(1 - alpha / 2) * score_vdata$AUC$score$se,
+  score_vdata$AUC$score$AUC + qnorm(1 - alpha / 2) * score_vdata$AUC$score$se
+  ),
+  nrow = 2, ncol = 3, byrow = T,
+  dimnames = list(
+  c("C-index, Stages 3-4, 2 year", "Time dependent AUC, Stages 3-4, 2 year"),
+  c("Estimate", "Lower .95", "Upper .95")
+  )
+  )
+
+res_discr_csh2a <- round(res_discr_csh, k)
+
+# Seleccion del grupo: Stages 3b-4----
+group <- c("Stages 3b-4")
+
+data %>% 
+  filter(ckd_stage2 == group) -> data_filt
+
+vdata <- data_filt %>% 
+  select(id, risk2y, risk5y, time5y, eventd5y) %>%  
+  drop_na() %>%  
+  mutate(status = factor(eventd5y, 
+                         levels = c(0, 1, 2), 
+                         labels = c("Alive w/o Kidney Failure", 
+                                    "Kidney Failure", 
+                                    "Death w/o Kidney Failure")), 
+         status_num = eventd5y)
+
+primary_event <- 1
+
+# A 5 años----
+vdata$pred <- vdata$risk5y
+horizon <- 5 
+pred <- as.matrix(vdata$pred)
+
+# Validation set
+C_vdata <- pec::cindex(
+  object = list("CauseSpecificCox" = pred),
+  formula = Hist(time5y, eventd5y) ~ 1,
+  cause = primary_event,
+  eval.times = horizon,
+  data = vdata
+)$AppCindex$CauseSpecificCox
+
+# Bootstraping C-index to calculate the bootstrap percentile confidence intervals
+
+set.seed(777)
+
+C_boot <- function(B, data) {
+  cstat <- c()
+  n <- nrow(data)
+  for (i in 1:B) {
+    ids <- sample(1:n, n, TRUE)
+    data_boot <- data[ids, ]
+    
+    pec::cindex(
+    object = list("CauseSpecificCox" = as.matrix(data_boot$pred)),
+    formula = Hist(time5y, status_num) ~ 1,
+    cause = primary_event,
+    eval.times = horizon,
+    data = data_boot
+    )$AppCindex$CauseSpecificCox -> cstat[i]
+  }
+  return(cstat)
+}
+
+set.seed(777)
+C_vdata_boot <- C_boot(B = B, data = vdata)
+
+# Time-dependent AUC ---------
+
+# Validation data
+score_vdata <- Score(
+  list("csh_validation" = pred),
+  formula = Hist(time5y, status_num) ~ 1,
+  cens.model = "km",
+  data = vdata,
+  conf.int = TRUE,
+  times = horizon,
+  metrics = c("auc"),
+  cause = primary_event,
+  plots = "calibration"
+)
+
+alpha <- .05
+k <- 3
+res_discr_csh <- matrix(c(
+  ## C-index
+  # Validation CSH1
+  C_vdata,
+  quantile(C_vdata_boot, probs = alpha / 2),
+  quantile(C_vdata_boot, probs = 1 - alpha / 2),
+
+  ## Time-dependent AUC
+  # Validation CSH1
+  score_vdata$AUC$score$AUC,
+  score_vdata$AUC$score$AUC - qnorm(1 - alpha / 2) * score_vdata$AUC$score$se,
+  score_vdata$AUC$score$AUC + qnorm(1 - alpha / 2) * score_vdata$AUC$score$se
+  ),
+  nrow = 2, ncol = 3, byrow = T,
+  dimnames = list(
+  c("C-index, Stages 3-4, 5 year", "Time dependent AUC, Stages 3-4, 5 year"),
+  c("Estimate", "Lower .95", "Upper .95")
+  )
+  )
+
+res_discr_csh5a <- round(res_discr_csh, k)
+```
+
+#### D statistic y R<sup>2</sup><sub>D</sub> de Royston-Sauerbrei
+
+El estadístico D y su versión transformada para mejorar interpretabilidad: $R^2_D$ indicaron buena discriminación. Especialmente, el $R^2_D$ puede interpretarse como la varianza explicada del modelo. En todos los horizontes temporales (2 años y 5 años) y subpoblaciones (3a-3b-4 y 3b-4) se apreció que el modelo explicaba más del 53% de la varibabilida de los datos de validación externa.
+
+```{r}
+#| label: royston-d2
+
+# function to calculate D and R2D
+source("Code/R/roystonD.R")
+
+# Seleccion del grupo: Stages 3-4----
+group <- c("Stages 3-4")
+
+data %>% 
+  filter(ckd_stage == group) -> data_filt
+
+vdata <- data_filt %>% 
+  select(id, risk2y, risk5y, time2y, time5y, eventd2y, eventd5y) %>%  
+  drop_na() 
+
+primary_event <- 1
+
+# A 2 años----
+vdata$pred <- vdata$risk2y
+horizon <- 2 
+pred <- as.matrix(vdata$pred)
+
+# Rank based on predicted values at 2 years
+vdata$rank <- rank(vdata$pred,
+  na.last = TRUE,
+  ties.method = "first"
+)
+
+res_vdata <- royston_R2D_cmprsk(
+  pred = vdata$pred,
+  data = vdata,
+  primary_event = 1,
+  time = vdata$time2y,
+  status = vdata$eventd2y
+)
+
+k <- 2
+res_D <- rbind(
+  "Stages 3-4, 2 year" = res_vdata
+  )
+
+res_D2a <- round(res_D, k)
+
+# A 5 años----
+vdata$pred <- vdata$risk5y
+horizon <- 5 
+pred <- as.matrix(vdata$pred)
+
+# Rank based on predicted values at 5 years
+vdata$rank <- rank(vdata$pred,
+  na.last = TRUE,
+  ties.method = "first"
+)
+
+res_vdata <- royston_R2D_cmprsk(
+  pred = vdata$pred,
+  data = vdata,
+  primary_event = 1,
+  time = vdata$time5y,
+  status = vdata$eventd5y
+)
+
+k <- 2
+res_D <- rbind(
+  "Stages 3-4, 5 year" = res_vdata
+  )
+
+res_D5a <- round(res_D, k)
+
+ # Seleccion del grupo: Stages 3b-4----
+group <- c("Stages 3b-4")
+
+data %>% 
+  filter(ckd_stage2 == group) -> data_filt
+
+vdata <- data_filt %>% 
+  select(id, risk2y, risk5y, time5y, eventd5y, time2y, eventd2y) %>%  
+  drop_na()
+
+primary_event <- 1
+
+# A 2 años----
+vdata$pred <- vdata$risk2y
+horizon <- 2 
+pred <- as.matrix(vdata$pred)
+
+# Rank based on predicted values at 2 years
+
+vdata$rank <- rank(vdata$pred,
+  na.last = TRUE,
+  ties.method = "first"
+)
+
+res_vdata <- royston_R2D_cmprsk(
+  pred = vdata$pred,
+  data = vdata,
+  primary_event = 1,
+  time = vdata$time2y,
+  status = vdata$eventd2y
+)
+
+k <- 2
+res_D <- rbind(
+  "Stages 3b-4, 2 year" = res_vdata
+  )
+
+res_D2b <- round(res_D, k)
+
+# A 5 años----
+vdata$pred <- vdata$risk5y
+horizon <- 5 
+pred <- as.matrix(vdata$pred)
+
+# Rank based on predicted values at 5 years
+
+vdata$rank <- rank(vdata$pred,
+  na.last = TRUE,
+  ties.method = "first"
+)
+
+res_vdata <- royston_R2D_cmprsk(
+  pred = vdata$pred,
+  data = vdata,
+  primary_event = 1,
+  time = vdata$time5y,
+  status = vdata$eventd5y
+)
+
+k <- 2
+res_D <- rbind(
+  "Stages 3b-4, 5 year" = res_vdata
+  )
+
+res_D5b <- round(res_D, k)
+```
+
+### Rendimiento global del modelo
+
+```{r}
+#| label: overall-error
+#| output: false
+
+# Seleccion del grupo: Stages 3-4----
+nboot <- 100
+group <- c("Stages 3-4")
+
+data %>% 
+  filter(ckd_stage == group) -> data_filt
+
+vdata <- data_filt %>% 
+  select(id, risk2y, risk5y, time2y, time5y, eventd2y, eventd5y) %>%  
+  mutate(status_num = eventd5y) %>% 
+  drop_na() 
+
+# A 2 años----
+vdata$pred <- vdata$risk2y
+horizon <- 2 
+pred <- as.matrix(vdata$pred)
+
+primary_event <- 1
+
+# Validation data
+score_vdata <- Score(
+  list("csh_validation" = vdata$pred),
+  formula = Hist(time5y, status_num) ~ 1,
+  cens.model = "km",
+  data = vdata,
+  conf.int = TRUE,
+  times = horizon,
+  metrics = c("auc", "brier"),
+  summary = c("ipa"),
+  cause = primary_event,
+  plots = "calibration"
+)
+
+# Bootstrapping data
+score_boot <- function(B, data) {
+  n <- nrow(data)
+  ipa <- c()
+  for (i in 1:B) {
+    ids <- sample(1:n, n, T)
+    data_boot <- data[ids, ]
+    Score(
+    list("csh_validation" = data_boot$pred),
+    formula = Hist(time5y, status_num) ~ 1,
+    cens.model = "km",
+    data = data_boot,
+    conf.int = TRUE,
+    times = horizon,
+    metrics = c("auc", "brier"),
+    summary = c("ipa"),
+    cause = primary_event,
+    plots = "calibration"
+    ) -> scor
+    ipa[i] <- scor[["Brier"]][["score"]][["IPA"]][[2]]
+    cat(".")
+  }
+  return(ipa)
+}
+
+set.seed(12314)
+score_boot(B = nboot, data = vdata) -> vboot
+
+# Table overall measures
+alpha <- .05
+k <- 2 # number of digits
+res_ov_csh <- matrix(unlist(c(
+
+  # Brier score - external validation
+  score_vdata$Brier$score[model == "csh_validation"]$Brier,
+  score_vdata$Brier$score[model == "csh_validation"]$lower,
+  score_vdata$Brier$score[model == "csh_validation"]$upper,
+
+  # IPA - external validation
+  score_vdata$Brier$score[model == "csh_validation"]$IPA,
+  quantile(vboot, probs = alpha / 2),
+  quantile(vboot, probs = 1 - alpha / 2)
+  )),
+  nrow = 2, ncol = 3,
+  byrow = T,
+  dimnames =
+  list(
+    c("Brier, Stages 3-4, 2 year", "Scaled Brier, Stages 3-4, 2 year"),
+    c("Estimate", "Lower .95 ", "Upper .95")
+    )
+  )
+
+res_ov2a <- round(res_ov_csh, 3) # Digits
+
+# A 5 años----
+vdata$pred <- vdata$risk5y
+horizon <- 5 
+pred <- as.matrix(vdata$pred)
+
+primary_event <- 1
+
+# Validation data
+score_vdata <- Score(
+  list("csh_validation" = vdata$pred),
+  formula = Hist(time5y, status_num) ~ 1,
+  cens.model = "km",
+  data = vdata,
+  conf.int = TRUE,
+  times = horizon,
+  metrics = c("auc", "brier"),
+  summary = c("ipa"),
+  cause = primary_event,
+  plots = "calibration"
+)
+
+# Bootstrapping data
+score_boot <- function(B, data) {
+  n <- nrow(data)
+  ipa <- c()
+  for (i in 1:B) {
+    ids <- sample(1:n, n, T)
+    data_boot <- data[ids, ]
+    Score(
+    list("csh_validation" = data_boot$pred),
+    formula = Hist(time5y, status_num) ~ 1,
+    cens.model = "km",
+    data = data_boot,
+    conf.int = TRUE,
+    times = horizon,
+    metrics = c("auc", "brier"),
+    summary = c("ipa"),
+    cause = primary_event,
+    plots = "calibration"
+    ) -> scor
+    ipa[i] <- scor[["Brier"]][["score"]][["IPA"]][[2]]
+    cat(".")
+  }
+  return(ipa)
+}
+
+set.seed(12314)
+score_boot(B = nboot, data = vdata) -> vboot
+
+# Table overall measures
+alpha <- .05
+k <- 2 # number of digits
+res_ov_csh <- matrix(unlist(c(
+
+  # Brier score - external validation
+  score_vdata$Brier$score[model == "csh_validation"]$Brier,
+  score_vdata$Brier$score[model == "csh_validation"]$lower,
+  score_vdata$Brier$score[model == "csh_validation"]$upper,
+
+  # IPA - external validation
+  score_vdata$Brier$score[model == "csh_validation"]$IPA,
+  quantile(vboot, probs = alpha / 2),
+  quantile(vboot, probs = 1 - alpha / 2)
+  )),
+  nrow = 2, ncol = 3,
+  byrow = T,
+  dimnames =
+  list(
+    c("Brier, Stages 3-4, 5 year", "Scaled Brier, Stages 3-4, 5 year"),
+    c("Estimate", "Lower .95 ", "Upper .95")
+    )
+  )
+
+res_ov5a <- round(res_ov_csh, 3) # Digits
+
+# Seleccion del grupo: Stages 3b-4----
+group <- c("Stages 3b-4")
+
+data %>% 
+  filter(ckd_stage2 == group) -> data_filt
+
+vdata <- data_filt %>% 
+  select(id, risk2y, risk5y, time2y, time5y, eventd2y, eventd5y) %>%  
+  mutate(status_num = eventd5y) %>% 
+  drop_na() 
+
+# A 2 años----
+vdata$pred <- vdata$risk2y
+horizon <- 2 
+pred <- as.matrix(vdata$pred)
+
+primary_event <- 1
+
+# Validation data
+score_vdata <- Score(
+  list("csh_validation" = vdata$pred),
+  formula = Hist(time5y, status_num) ~ 1,
+  cens.model = "km",
+  data = vdata,
+  conf.int = TRUE,
+  times = horizon,
+  metrics = c("auc", "brier"),
+  summary = c("ipa"),
+  cause = primary_event,
+  plots = "calibration"
+)
+
+# Bootstrapping data
+score_boot <- function(B, data) {
+  n <- nrow(data)
+  ipa <- c()
+  for (i in 1:B) {
+    ids <- sample(1:n, n, T)
+    data_boot <- data[ids, ]
+    Score(
+    list("csh_validation" = data_boot$pred),
+    formula = Hist(time5y, status_num) ~ 1,
+    cens.model = "km",
+    data = data_boot,
+    conf.int = TRUE,
+    times = horizon,
+    metrics = c("auc", "brier"),
+    summary = c("ipa"),
+    cause = primary_event,
+    plots = "calibration"
+    ) -> scor
+    ipa[i] <- scor[["Brier"]][["score"]][["IPA"]][[2]]
+    cat(".")
+  }
+  return(ipa)
+}
+
+set.seed(12314)
+score_boot(B = nboot, data = vdata) -> vboot
+
+# Table overall measures
+alpha <- .05
+k <- 2 # number of digits
+res_ov_csh <- matrix(unlist(c(
+
+  # Brier score - external validation
+  score_vdata$Brier$score[model == "csh_validation"]$Brier,
+  score_vdata$Brier$score[model == "csh_validation"]$lower,
+  score_vdata$Brier$score[model == "csh_validation"]$upper,
+
+  # IPA - external validation
+  score_vdata$Brier$score[model == "csh_validation"]$IPA,
+  quantile(vboot, probs = alpha / 2),
+  quantile(vboot, probs = 1 - alpha / 2)
+  )),
+  nrow = 2, ncol = 3,
+  byrow = T,
+  dimnames =
+  list(
+    c("Brier, Stages 3b-4, 2 year", "Scaled Brier, Stages 3b-4, 2 year"),
+    c("Estimate", "Lower .95 ", "Upper .95")
+    )
+  )
+
+res_ov2b <- round(res_ov_csh, 3) # Digits
+
+# A 5 años----
+vdata$pred <- vdata$risk5y
+horizon <- 5 
+pred <- as.matrix(vdata$pred)
+
+primary_event <- 1
+
+# Validation data
+score_vdata <- Score(
+  list("csh_validation" = vdata$pred),
+  formula = Hist(time5y, status_num) ~ 1,
+  cens.model = "km",
+  data = vdata,
+  conf.int = TRUE,
+  times = horizon,
+  metrics = c("auc", "brier"),
+  summary = c("ipa"),
+  cause = primary_event,
+  plots = "calibration"
+)
+
+# Bootstrapping data
+score_boot <- function(B, data) {
+  n <- nrow(data)
+  ipa <- c()
+  for (i in 1:B) {
+    ids <- sample(1:n, n, T)
+    data_boot <- data[ids, ]
+    Score(
+    list("csh_validation" = data_boot$pred),
+    formula = Hist(time5y, status_num) ~ 1,
+    cens.model = "km",
+    data = data_boot,
+    conf.int = TRUE,
+    times = horizon,
+    metrics = c("auc", "brier"),
+    summary = c("ipa"),
+    cause = primary_event,
+    plots = "calibration"
+    ) -> scor
+    ipa[i] <- scor[["Brier"]][["score"]][["IPA"]][[2]]
+    cat(".")
+  }
+  return(ipa)
+}
+
+set.seed(12314)
+score_boot(B = nboot, data = vdata) -> vboot
+
+# Table overall measures
+alpha <- .05
+k <- 2 # number of digits
+res_ov_csh <- matrix(unlist(c(
+
+  # Brier score - external validation
+  score_vdata$Brier$score[model == "csh_validation"]$Brier,
+  score_vdata$Brier$score[model == "csh_validation"]$lower,
+  score_vdata$Brier$score[model == "csh_validation"]$upper,
+
+  # IPA - external validation
+  score_vdata$Brier$score[model == "csh_validation"]$IPA,
+  quantile(vboot, probs = alpha / 2),
+  quantile(vboot, probs = 1 - alpha / 2)
+  )),
+  nrow = 2, ncol = 3,
+  byrow = T,
+  dimnames =
+  list(
+    c("Brier, Stages 3b-4, 5 year", "Scaled Brier, Stages 3b-4, 5 year"),
+    c("Estimate", "Lower .95 ", "Upper .95")
+    )
+  )
+
+res_ov5b <- round(res_ov_csh, 3) # Digits
+```
+
+```{r}
+#| label: table-performance-final
+#| output: false
+
+# Average predicted risk
+avg_pred <- cbind("metrica" = "Average predicted risk", 
+                 avg_pred2a, 
+                 avg_pred5a, 
+                 avg_pred2b, 
+                 avg_pred5b)
+
+colnames(avg_pred) <- c("metrica", "est2ya", "est5ya", "est2yb", "est5yb")
+
+avg_pred %>% 
+  as_tibble() %>% 
+  mutate(
+    est2ya = as.character(glue("{est2ya}%")), 
+    est5ya = as.character(glue("{est5ya}%")),
+    est2yb = as.character(glue("{est2yb}%")),
+    est5yb = as.character(glue("{est5yb}%"))   
+  ) -> avg_pred; avg_pred
+
+# Average observed proportion
+avg_obs <- cbind("metrica" = "Average observed proportion (95% CI)", 
+                 avg_obs2a, 
+                 avg_obs5a, 
+                 avg_obs2b, 
+                 avg_obs5b)
+
+colnames(avg_obs) <- c("metrica", "OE2a", "ll2a", "ul2a", 
+                          "OE5a", "ll5a", "ul5a", 
+                          "OE2b", "ll2b", "ul2b", 
+                          "OE5b", "ll5b", "ul5b")
+avg_obs %>% 
+  as_tibble() %>% 
+  mutate(
+    est2ya = as.character(glue("{OE2a}% ({ll2a}% to {ul2a}%)")), 
+    est5ya = as.character(glue("{OE5a}% ({ll5a}% to {ul5a}%)")),
+    est2yb = as.character(glue("{OE2b}% ({ll2b}% to {ul2b}%)")),
+    est5yb = as.character(glue("{OE5b}% ({ll5b}% to {ul5b}%)"))   
+  ) %>% 
+  select(metrica, starts_with("est")) -> avg_obs; avg_obs
+
+# OE summary
+OE_summary <- cbind("metrica" = "O/E ratio (95% CI)", 
+                    OE_summary2a, 
+                    OE_summary5a, 
+                    OE_summary2b, 
+                    OE_summary5b); OE_summary
+
+colnames(OE_summary) <- c("metrica", "OE2a", "ll2a", "ul2a", 
+                         "OE5a", "ll5a", "ul5a", 
+                         "OE2b", "ll2b", "ul2b", 
+                         "OE5b", "ll5b", "ul5b")
+
+OE_summary %>% 
+  as_tibble() %>% 
+  mutate(
+    est2ya = as.character(glue("{OE2a} ({ll2a} to {ul2a})")), 
+    est5ya = as.character(glue("{OE5a} ({ll5a} to {ul5a})")),
+    est2yb = as.character(glue("{OE2b} ({ll2b} to {ul2b})")),
+    est5yb = as.character(glue("{OE5b} ({ll5b} to {ul5b})"))   
+    ) %>% 
+  select(metrica, starts_with("est")) -> OE_summary; OE_summary
+
+# Calibration slope e intercept
+res_cal <- cbind("metrica" = c("Calibration intercept (95% CI)", " Calibration slope (95% CI)"), 
+                 res_cal2a, 
+                 res_cal5a, 
+                 res_cal2b, 
+                 res_cal5b); res_cal
+
+colnames(res_cal) <- c("metrica", "OE2a", "ll2a", "ul2a", 
+                       "OE5a", "ll5a", "ul5a", 
+                       "OE2b", "ll2b", "ul2b", 
+                       "OE5b", "ll5b", "ul5b")
+res_cal <- 
+  res_cal %>% 
+  as_tibble() %>% 
+  mutate(
+    est2ya = as.character(glue("{OE2a} ({ll2a} to {ul2a})")), 
+    est5ya = as.character(glue("{OE5a} ({ll5a} to {ul5a})")),
+    est2yb = as.character(glue("{OE2b} ({ll2b} to {ul2b})")),
+    est5yb = as.character(glue("{OE5b} ({ll5b} to {ul5b})"))   
+  ) %>% 
+  select(metrica, starts_with("est")) 
+
+rbind(avg_pred, avg_obs, OE_summary, res_cal) -> table_performance; table_performance
+
+# C-index y C/D AUC
+res_discr_csh <- cbind("metrica" = c("C-index up to t-years (95% CI)", " C/D AUC, at t years (95% CI)"), 
+                 res_discr_csh2a, 
+                 res_discr_csh5a, 
+                 res_discr_csh2b, 
+                 res_discr_csh5b); res_discr_csh
+
+colnames(res_discr_csh) <- c("metrica", "OE2a", "ll2a", "ul2a", 
+                       "OE5a", "ll5a", "ul5a", 
+                       "OE2b", "ll2b", "ul2b", 
+                       "OE5b", "ll5b", "ul5b")
+res_discr_csh <- 
+  res_discr_csh %>% 
+  as_tibble() %>% 
+  mutate(
+    est2ya = as.character(glue("{OE2a} ({ll2a} to {ul2a})")), 
+    est5ya = as.character(glue("{OE5a} ({ll5a} to {ul5a})")),
+    est2yb = as.character(glue("{OE2b} ({ll2b} to {ul2b})")),
+    est5yb = as.character(glue("{OE5b} ({ll5b} to {ul5b})"))   
+  ) %>% 
+  select(metrica, starts_with("est")) 
+
+# D-statistic y R2D
+res_D <- cbind("metrica" = "D statistic (95% CI)", 
+               as.matrix(t(res_D2a[, -4])), 
+               as.matrix(t(res_D5a[, -4])), 
+               as.matrix(t(res_D2b[, -4])), 
+               as.matrix(t(res_D5b[, -4]))); res_D
+
+colnames(res_D) <- c("metrica", "OE2a", "ll2a", "ul2a",
+                             "OE5a", "ll5a", "ul5a",  
+                             "OE2b", "ll2b", "ul2b",
+                             "OE5b", "ll5b", "ul5b")
+res_D <- 
+  res_D %>% 
+  as_tibble() %>% 
+  mutate(
+    est2ya = as.character(glue("{OE2a} ({ll2a} to {ul2a})")), 
+    est5ya = as.character(glue("{OE5a} ({ll5a} to {ul5a})")),
+    est2yb = as.character(glue("{OE2b} ({ll2b} to {ul2b})")),
+    est5yb = as.character(glue("{OE5b} ({ll5b} to {ul5b})"))   
+  ) %>% 
+  select(metrica, starts_with("est")) 
+
+res_D2 <- cbind("metrica" = "R2D", 
+                res_D2a[4] * 100, 
+                res_D5a[4] * 100, 
+                res_D2b[4] * 100, 
+                res_D5b[4] * 100)
+
+colnames(res_D2) <- c("metrica", "est2ya", "est5ya", "est2yb", "est5yb")
+
+res_D2 %>% 
+  as_tibble() %>% 
+  mutate(
+    est2ya = as.character(glue("{est2ya}%")), 
+    est5ya = as.character(glue("{est5ya}%")),
+    est2yb = as.character(glue("{est2yb}%")),
+    est5yb = as.character(glue("{est5yb}%"))   
+  ) -> res_D2; res_D2
+
+# Brier score
+res_ov <- cbind("metrica" = c("Brier score (95% CI)", "Scaled Brier score (95% CI)"), 
+                res_ov2a * c(1, 100), 
+                res_ov5a * c(1, 100), 
+                res_ov2b * c(1, 100), 
+                res_ov5b * c(1, 100)); res_ov
+
+colnames(res_ov) <- c("metrica", "OE2a", "ll2a", "ul2a", 
+                             "OE5a", "ll5a", "ul5a", 
+                             "OE2b", "ll2b", "ul2b", 
+                             "OE5b", "ll5b", "ul5b")
+res_ov1 <- 
+  res_ov %>% 
+  as_tibble() %>% 
+  filter(metrica == "Brier score (95% CI)") %>% 
+  mutate(
+    est2ya = as.character(glue("{OE2a} ({ll2a} to {ul2a})")), 
+    est5ya = as.character(glue("{OE5a} ({ll5a} to {ul5a})")),
+    est2yb = as.character(glue("{OE2b} ({ll2b} to {ul2b})")),
+    est5yb = as.character(glue("{OE5b} ({ll5b} to {ul5b})"))   
+  ) %>% 
+  select(metrica, starts_with("est"))  
+
+res_ov2 <- 
+  res_ov %>% 
+  as_tibble() %>% 
+  filter(metrica == "Scaled Brier score (95% CI)") %>% 
+  mutate(
+    est2ya = as.character(glue("{OE2a}% ({ll2a}% to {ul2a}%)")), 
+    est5ya = as.character(glue("{OE5a}% ({ll5a}% to {ul5a}%)")),
+    est2yb = as.character(glue("{OE2b}% ({ll2b}% to {ul2b}%)")),
+    est5yb = as.character(glue("{OE5b}% ({ll5b}% to {ul5b}%)"))   
+  ) %>% 
+  select(metrica, starts_with("est"))  
+
+res_ov <- rbind(res_ov1, res_ov2); res_ov
+
+
+rbind(avg_pred, avg_obs, OE_summary, res_cal, res_discr_csh, res_D, res_D2, 
+      res_ov) -> table_performance; table_performance
+
+table_performance %>% 
+  mutate(grupo = c(rep("Calibration", 5), rep("Discrimination", 4), rep("Overall prediction error", 2))) %>% 
+  relocate(grupo, .before = "metrica") %>%
+  bind_rows() %>% 
+  as_grouped_data(groups = "grupo") %>% 
+  flextable::as_flextable(hide_grouplabel = TRUE)  %>%
+  set_header_labels(
+    metrica = "Validation aspect and performance measure", 
+    est2ya = "t = 2 year", 
+    est5ya = "t = 5 year", 
+    est2yb = "t = 2 year", 
+    est5yb = "t = 5 year" 
+  ) %>% 
+  add_header_row(
+    values = c("Validation aspect and performance measure", "CKD Stages 3a-3b-4", "CKD Stages 3b-4"), 
+    colwidths = c(1, 2, 2)
+  ) %>% 
+  merge_v(j = 1, part = "header") %>% 
+  bold(i = c(1, 7, 12)) %>% 
+  autofit()  %>% 
+  set_caption("Table 2. Performance measures of KFRE in the external dataset of patients with CKD Stages 3a-4 and 3b-4") %>% 
+  theme_booktabs() %>%  
+  bold(bold = TRUE, part = "header")  -> table_perf_final
+
+table_perf_final %>% 
+  flextable::save_as_docx(path = "Tables/Table2.docx")
+```
+
+### Table 2
+
+```{r}
+#| label: table-perf-final
+table_perf_final
+```
+
+## Evaluación de utilidad del modelo predictivo
+
+```{r}
+#| label: decision-curve
+#| fig.align: center
+#| fig-cap: "Decision curve analysis"
+
+# Seleccion del grupo: Stages 3-4----
+group <- c("Stages 3-4")
+
+data %>% 
+  filter(ckd_stage == group) -> data_filt
+
+vdata <- data_filt %>% 
+  select(id, risk2y, risk5y, time2y, time5y, eventd2y, eventd5y) %>%  
+  mutate(status_num = eventd5y) %>% 
+  drop_na() 
+
+# A 2 años----
+vdata$pred <- vdata$risk2y
+horizon <- 2 
+pred <- as.matrix(vdata$pred)
+
+primary_event <- 1
+
+vdata %>% 
+  mutate(
+    eventd5y = factor(eventd5y)
+  ) -> vdata_dca
+
+dca(
+  Surv(time5y, eventd5y) ~ pred, 
+  data = vdata_dca, 
+  time = horizon, 
+  thresholds = seq(0, 0.5, 0.01), 
+  label = list(pred = "Prob. of kidney failure within 2 years")
+  ) -> dca1 
+
+dca1 %>% 
+  plot(smooth = TRUE)  + 
+  theme_bw() + 
+  theme(legend.position = "bottom") -> p1
+
+
+# A 5 años----
+vdata$pred <- vdata$risk5y
+horizon <- 5 
+pred <- as.matrix(vdata$pred)
+
+primary_event <- 1
+
+vdata %>% 
+  mutate(
+    eventd5y = factor(eventd5y)
+  ) -> vdata_dca
+
+dca(
+  Surv(time5y, eventd5y) ~ pred, 
+  data = vdata_dca, 
+  time = horizon, 
+  thresholds = seq(0, 0.5, 0.01), 
+  label = list(pred = "Prob. of kidney failure within 5 years")
+  ) -> dca2 
+
+dca2 %>% 
+  plot(smooth = TRUE) + 
+  theme_bw() + 
+  theme(legend.position = "bottom") -> p2
+
+# Seleccion del grupo: Stages 3b-4----
+group <- c("Stages 3b-4")
+
+data %>% 
+  filter(ckd_stage2 == group) -> data_filt
+
+vdata <- data_filt %>% 
+  select(id, risk2y, risk5y, time2y, time5y, eventd2y, eventd5y) %>%  
+  mutate(status_num = eventd5y) %>% 
+  drop_na() 
+
+# A 2 años----
+vdata$pred <- vdata$risk2y
+horizon <- 2 
+pred <- as.matrix(vdata$pred)
+
+primary_event <- 1
+
+vdata %>% 
+  mutate(
+    eventd5y = factor(eventd5y)
+  ) -> vdata_dca
+
+dca(
+  Surv(time5y, eventd5y) ~ pred, 
+  data = vdata_dca, 
+  time = horizon, 
+  thresholds = seq(0, 0.5, 0.01), 
+  label = list(pred = "Prob. of kidney failure within 2 years")
+  ) -> dca3 
+
+dca3 %>% 
+  plot(smooth = TRUE)  + 
+  theme_bw() +
+  theme(legend.position = "bottom")  -> p3
+
+
+# A 5 años----
+vdata$pred <- vdata$risk5y
+horizon <- 5 
+pred <- as.matrix(vdata$pred)
+
+primary_event <- 1
+
+vdata %>% 
+  mutate(
+    eventd5y = factor(eventd5y)
+  ) -> vdata_dca
+
+dca(
+  Surv(time5y, eventd5y) ~ pred, 
+  data = vdata_dca, 
+  time = horizon, 
+  thresholds = seq(0, 0.5, 0.01), 
+  label = list(pred = "Prob. of kidney failure within 5 years")
+  ) -> dca4 
+
+dca4 %>% 
+  plot(smooth = TRUE) + 
+  theme_bw()  + 
+  theme(legend.position = "bottom") -> p4
+```
+
+```{r}
+#| label: fig-utility
+#| fig.width: 10
+#| fig.height: 10
+#| fig.align: center
+#| fig-cap: "Decision curves analysis"
+p1a <- p1 + 
+  labs(title = "CKD Stages 3a-3b-4") + 
+  theme(plot.title = element_text(hjust = 0.5))
+p3a <- p3 + labs(title = "CKD Stages 3b-4") + 
+  theme(plot.title = element_text(hjust = 0.5))
+
+(p1a / p2) | (p3a / p4) + plot_annotation(tag_levels = 'A') -> plot_decision_curve
+
+ggsave(filename = "plot_decision_curve.png", 
+       device = "png", 
+       plot = plot_decision_curve, 
+       path = "Figures", 
+       width = 10,
+       height = 10, 
+       dpi = 300)
+
+(p1 / p2) | (p3 / p4)
+```
+
+```{r}
+#| echo: false
+dca1 %>% 
+  as_tibble() -> data_net_dca1
+```
+
+```{r}
+#| eval: false
+#| echo: false
+dca2 %>% 
+  as_tibble()
+```
+
+```{r}
+#| eval: false
+#| echo: false
+test_consequences(
+  Surv(time5y, eventd5y) ~ pred, 
+  data = vdata_dca,
+  statistics = c("pos_rate", "neg_rate", "test_pos_rate", "test_neg_rate", "tp_rate",
+    "fp_rate", "fn_rate", "tn_rate", "ppv", "npv", "sens", "spec", "lr_pos", "lr_neg"),
+  time = horizon, 
+  thresholds = seq(0, 0.5, 0.01), 
+  label = list(pred = "Prob. of kidney failure within 5 years")
+  )
+```
+
+## Análisis de sensibilidad
+
+### Curvas de calibración usando método de hazards subdistribucionales
+
+Cuando se utiliza otro enfoque de análisis, el método de hazards subdistribucionales, los gráficos de calibración revelan una mayor sobreestimación del riesgo de falla renal en comparación con los gráficos obtenidos mediante el método de pseusovalores (Ver @fig-subhazard-plot).
+
+```{r}
+#| label: fig-subhazard-plot
+#| fig.width: 7
+#| fig.height: 14
+#| fig.align: center
+#| fig-cap: "Cumulative incidence curves of the observed outcome probabilities in the population study for kidney failure or deathd without kidney failure"
+
+# Calibration plot (flexible regression approach) -------------------------
+
+library(survival)
+library(riskRegression)
+
+# Seleccion del grupo: Stages 3-5----
+group <- c("Stages 3-4")
+
+# Creacion de datsets para IA a 5 y 2 años
+data %>% 
+  filter(ckd_stage == group) -> data_filt
+
+vdata <- data_filt %>% 
+  select(id, risk2y, risk5y, time5y, eventd5y) %>%  
+  drop_na()
+
+primary_event <- 1
+
+# A 2 años----
+horizon <- 2
+
+# Add estimated risk and complementary log-log of it to dataset
+vdata$pred <- vdata$risk2y
+pred <- as.matrix(vdata$pred)
+vdata$cll_pred <- log(-log(1 - pred))
+
+# 5 knots seems to give somewhat equivalent graph to pseudo method with bw = 0.05
+n_internal_knots <- 5 # Austin et al. advise to use between 3 (more smoothing, less flexible) and 5 (less smoothing, more flexible)
+rcs_vdata <- ns(vdata$cll_pred, df = n_internal_knots + 1)
+colnames(rcs_vdata) <- paste0("basisf_", colnames(rcs_vdata))
+vdata_bis <- cbind.data.frame(vdata, rcs_vdata)
+
+# Use subdistribution hazards (Fine-Gray) model
+form_fgr <- reformulate(
+  termlabels = colnames(rcs_vdata),
+  response = "Hist(time5y, eventd5y)"
+)
+
+# Regress subdistribution of event of interest on cloglog of estimated risks
+calib_fgr <- FGR(
+  formula = form_fgr,
+  cause = primary_event,
+  data = vdata_bis
+)
+
+# Add observed and predicted together in a data frame
+dat_fgr <- cbind.data.frame(
+  "obs" = predict(calib_fgr, times = horizon, newdata = vdata_bis),
+  "pred" = vdata$pred
+)
+
+# Calibration plot
+dat_fgr2 <- dat_fgr[order(dat_fgr$pred), ]
+
+# A 5 años----
+horizon <- 5
+
+# Add estimated risk and complementary log-log of it to dataset
+vdata$pred <- vdata$risk5y
+pred <- as.matrix(vdata$pred)
+vdata$cll_pred <- log(-log(1 - pred))
+
+# 5 knots seems to give somewhat equivalent graph to pseudo method with bw = 0.05
+n_internal_knots <- 5 # Austin et al. advise to use between 3 (more smoothing, less flexible) and 5 (less smoothing, more flexible)
+rcs_vdata <- ns(vdata$cll_pred, df = n_internal_knots + 1)
+colnames(rcs_vdata) <- paste0("basisf_", colnames(rcs_vdata))
+vdata_bis <- cbind.data.frame(vdata, rcs_vdata)
+
+# Use subdistribution hazards (Fine-Gray) model
+form_fgr <- reformulate(
+  termlabels = colnames(rcs_vdata),
+  response = "Hist(time5y, eventd5y)"
+)
+
+# Regress subdistribution of event of interest on cloglog of estimated risks
+calib_fgr <- FGR(
+  formula = form_fgr,
+  cause = primary_event,
+  data = vdata_bis
+)
+
+# Add observed and predicted together in a data frame
+dat_fgr <- cbind.data.frame(
+  "obs" = predict(calib_fgr, times = horizon, newdata = vdata_bis),
+  "pred" = vdata$pred
+)
+
+# Calibration plot
+dat_fgr5 <- dat_fgr[order(dat_fgr$pred), ]
+
+# Seleccion del grupo: Stages 4-5----
+group <- c("Stages 3b-4")
+
+# Creacion de datsets para IA a 5 y 2 años
+data %>% 
+  filter(ckd_stage2 == group) -> data_filt
+
+vdata <- data_filt %>% 
+  select(id, risk2y, risk5y, time5y, eventd5y) %>%  
+  drop_na()
+
+primary_event <- 1
+
+# A 2 años----
+horizon <- 2
+
+# Add estimated risk and complementary log-log of it to dataset
+vdata$pred <- vdata$risk2y
+pred <- as.matrix(vdata$pred)
+vdata$cll_pred <- log(-log(1 - pred))
+
+# 5 knots seems to give somewhat equivalent graph to pseudo method with bw = 0.05
+n_internal_knots <- 5 # Austin et al. advise to use between 3 (more smoothing, less flexible) and 5 (less smoothing, more flexible)
+rcs_vdata <- ns(vdata$cll_pred, df = n_internal_knots + 1)
+colnames(rcs_vdata) <- paste0("basisf_", colnames(rcs_vdata))
+vdata_bis <- cbind.data.frame(vdata, rcs_vdata)
+
+# Use subdistribution hazards (Fine-Gray) model
+form_fgr <- reformulate(
+  termlabels = colnames(rcs_vdata),
+  response = "Hist(time5y, eventd5y)"
+)
+
+# Regress subdistribution of event of interest on cloglog of estimated risks
+calib_fgr <- FGR(
+  formula = form_fgr,
+  cause = primary_event,
+  data = vdata_bis
+)
+
+# Add observed and predicted together in a data frame
+dat_fgr <- cbind.data.frame(
+  "obs" = predict(calib_fgr, times = horizon, newdata = vdata_bis),
+  "pred" = vdata$pred
+)
+
+# Calibration plot
+dat_fgr2b <- dat_fgr[order(dat_fgr$pred), ]
+
+# A 5 años----
+horizon <- 5
+
+# Add estimated risk and complementary log-log of it to dataset
+vdata$pred <- vdata$risk5y
+pred <- as.matrix(vdata$pred)
+vdata$cll_pred <- log(-log(1 - pred))
+
+# 5 knots seems to give somewhat equivalent graph to pseudo method with bw = 0.05
+n_internal_knots <- 5 # Austin et al. advise to use between 3 (more smoothing, less flexible) and 5 (less smoothing, more flexible)
+rcs_vdata <- ns(vdata$cll_pred, df = n_internal_knots + 1)
+colnames(rcs_vdata) <- paste0("basisf_", colnames(rcs_vdata))
+vdata_bis <- cbind.data.frame(vdata, rcs_vdata)
+
+# Use subdistribution hazards (Fine-Gray) model
+form_fgr <- reformulate(
+  termlabels = colnames(rcs_vdata),
+  response = "Hist(time5y, eventd5y)"
+)
+
+# Regress subdistribution of event of interest on cloglog of estimated risks
+calib_fgr <- FGR(
+  formula = form_fgr,
+  cause = primary_event,
+  data = vdata_bis
+)
+
+# Add observed and predicted together in a data frame
+dat_fgr <- cbind.data.frame(
+  "obs" = predict(calib_fgr, times = horizon, newdata = vdata_bis),
+  "pred" = vdata$pred
+)
+
+# Calibration plot
+dat_fgr5b <- dat_fgr[order(dat_fgr$pred), ]
+
+par(xaxs = "i", yaxs = "i", las = 1, mfrow = c(2, 2))
+plot(
+  x = dat_fgr2$pred,
+  y = dat_fgr2$obs,
+  type = "l",
+  xlim = c(0, 1),
+  ylim = c(0, 1),
+  xlab = "Predictions",
+  ylab = "Observed outcome proportion",
+  bty = "n"
+)
+abline(a = 0, b = 1, lty = "dashed", col = "red")
+title("Calibration plot - 2 year KFRE\n(Stages 3-4)")
+
+plot(
+  x = dat_fgr5$pred,
+  y = dat_fgr5$obs,
+  type = "l",
+  xlim = c(0, 1),
+  ylim = c(0, 1),
+  xlab = "Predictions",
+  ylab = "Observed outcome proportion",
+  bty = "n"
+)
+abline(a = 0, b = 1, lty = "dashed", col = "red")
+title("Calibration plot - 5 year KFRE\n(Stages 3-4)")
+
+plot(
+  x = dat_fgr2b$pred,
+  y = dat_fgr2b$obs,
+  type = "l",
+  xlim = c(0, 1),
+  ylim = c(0, 1),
+  xlab = "Predictions",
+  ylab = "Observed outcome proportion",
+  bty = "n"
+)
+abline(a = 0, b = 1, lty = "dashed", col = "red")
+title("Calibration plot - 2 year KFRE\n(Stages 3b-4)")
+
+plot(
+  x = dat_fgr5b$pred,
+  y = dat_fgr5b$obs,
+  type = "l",
+  xlim = c(0, 1),
+  ylim = c(0, 1),
+  xlab = "Predictions",
+  ylab = "Observed outcome proportion",
+  bty = "n"
+)
+abline(a = 0, b = 1, lty = "dashed", col = "red")
+title("Calibration plot - 5 year KFRE\n(Stages 3b-4)")
+```
+
+## Tablas suplementarias
+
+### Tabla S1 {#sec-tableS1}
+
+```{r}
+#| label: table-S1
+data %>%  
+  filter(ckd_stage == "Stages 3-4") %>% 
+  mutate(
+    primary_event = case_when(
+      eventd5ylab == "Kidney Failure" ~ "Kidney failure", 
+      eventd5ylab %in% c("Alive w/o Kidney Failure", "Death w/o Kidney Failure") 
+      ~ "No kidney failure"), 
+    primary_event = factor(primary_event, 
+                           levels = c("No kidney failure", 
+                                      "Kidney failure"))) %>% 
+  dplyr::select(total, sex, age, acr_cat, grf_cat, crea, eGFR_mdrd, acr, 
+                urine_album, urine_crea, hta, dm, bmi, album35, hemog, 
+                sbp_control, dbp_control, ckd_class, death5y, eventd5ylab,  
+                primary_event) %>% 
+  gtsummary::tbl_summary(
+  by = "primary_event", 
+  type = all_continuous() ~ "continuous2",
+  statistic = all_continuous() ~ c(
+    "{mean} ({sd})",
+    "{median} ({p25}, {p75})", 
+    "{min}, {max}"
+  ),
+  digits = list(all_continuous() ~ c(1, 1, 1, 1), 
+                all_categorical() ~ c(0, 1)), 
+  missing_text = "Missing"
+  ) %>% 
+  bold_labels() -> tab2
+
+
+data %>%  
+  filter(ckd_stage == "Stages 3-4") %>% 
+  mutate(
+    primary_event = case_when(
+      eventd2ylab == "Kidney Failure" ~ "Kidney failure", 
+      eventd2ylab %in% c("Alive w/o Kidney Failure", "Death w/o Kidney Failure") 
+      ~ "No kidney failure"), 
+    primary_event = factor(primary_event, 
+                           levels = c("No kidney failure", 
+                                      "Kidney failure"))) %>% 
+  dplyr::select(total, sex, age, acr_cat, grf_cat, crea, eGFR_mdrd, acr, 
+                urine_album, urine_crea, hta, dm, bmi, album35, hemog, 
+                sbp_control, dbp_control, ckd_class, death2y, eventd2ylab,  
+                primary_event) %>% 
+  gtsummary::tbl_summary(
+  by = "primary_event", 
+  type = all_continuous() ~ "continuous2",
+  statistic = all_continuous() ~ c(
+    "{mean} ({sd})",
+    "{median} ({p25}, {p75})", 
+    "{min}, {max}"
+  ),
+  digits = list(all_continuous() ~ c(1, 1, 1, 1), 
+                all_categorical() ~ c(0, 1)), 
+  missing_text = "Missing"
+  ) %>% 
+  bold_labels() -> tab1
+
+tbl_merge(list(tab1, tab2), 
+          tab_spanner = c("2-years", "5-years")) %>% 
+  modify_caption("Table S1. Baseline characteristics of the study patients at CKD Stages 3a, 3b or 4 for all predictors, stratified by outcome at 2- and 5-years") -> tab
+
+
+tab %>% 
+  as_flex_table() %>% 
+  flextable::save_as_docx(path = "Tables/TableS1.docx")
+
+tab %>% 
+  gtsummary::as_kable_extra() %>%
+  kableExtra::kable_styling("striped")
+```
+
+### Tabla S2 {#sec-tableS2}
+
+```{r}
+#| label: table-S2
+data %>%  
+  filter(ckd_stage2 == "Stages 3b-4") %>% 
+  mutate(
+    primary_event = case_when(
+      eventd5ylab == "Kidney Failure" ~ "Kidney failure", 
+      eventd5ylab %in% c("Alive w/o Kidney Failure", "Death w/o Kidney Failure") 
+      ~ "No kidney failure"), 
+    primary_event = factor(primary_event, 
+                           levels = c("No kidney failure", 
+                                      "Kidney failure"))) %>% 
+  dplyr::select(total, sex, age, acr_cat, grf_cat, crea, eGFR_mdrd, acr, 
+                urine_album, urine_crea, hta, dm, bmi, album35, hemog, 
+                sbp_control, dbp_control, ckd_class, death5y, eventd5ylab,  
+                primary_event) %>% 
+  gtsummary::tbl_summary(
+  by = "primary_event", 
+  type = all_continuous() ~ "continuous2",
+  statistic = all_continuous() ~ c(
+    "{mean} ({sd})",
+    "{median} ({p25}, {p75})", 
+    "{min}, {max}"
+  ),
+  digits = list(all_continuous() ~ c(1, 1, 1, 1), 
+                all_categorical() ~ c(0, 1)), 
+  missing_text = "Missing"
+  ) %>% 
+  bold_labels() -> tab2
+
+
+data %>%  
+  filter(ckd_stage == "Stages 3-4") %>% 
+  mutate(
+    primary_event = case_when(
+      eventd2ylab == "Kidney Failure" ~ "Kidney failure", 
+      eventd2ylab %in% c("Alive w/o Kidney Failure", "Death w/o Kidney Failure") 
+      ~ "No kidney failure"), 
+    primary_event = factor(primary_event, 
+                           levels = c("No kidney failure", 
+                                      "Kidney failure"))) %>% 
+  dplyr::select(total, sex, age, acr_cat, grf_cat, crea, eGFR_mdrd, acr, 
+                urine_album, urine_crea, hta, dm, bmi, album35, hemog, 
+                sbp_control, dbp_control, ckd_class, death2y, eventd2ylab,  
+                primary_event) %>% 
+  gtsummary::tbl_summary(
+  by = "primary_event", 
+  type = all_continuous() ~ "continuous2",
+  statistic = all_continuous() ~ c(
+    "{mean} ({sd})",
+    "{median} ({p25}, {p75})", 
+    "{min}, {max}"
+  ),
+  digits = list(all_continuous() ~ c(1, 1, 1, 1), 
+                all_categorical() ~ c(0, 1)), 
+  missing_text = "Missing"
+  ) %>% 
+  bold_labels() -> tab1
+
+tbl_merge(list(tab1, tab2), 
+          tab_spanner = c("2-years", "5-years")) %>% 
+  modify_caption("Table S1. Baseline characteristics of the study patients at CKD Stages 3b or 4 for all predictors, stratified by outcome at 2- and 5-years") -> tab
+
+tab %>% 
+  as_flex_table() %>% 
+  flextable::save_as_docx(path = "Tables/TableS2.docx")
+
+tab %>% 
+  gtsummary::as_kable_extra() %>%
+  kableExtra::kable_styling("striped")
+```
+
+### Tabla S3 {#sec-tableS3}
+
+```{r}
+#| label: table-S3
+
+data %>%  
+  dplyr::select(total, sex, age, acr_cat, grf_cat, ckd_class, crea, eGFR_ckdepi, acr, 
+                urine_album, urine_crea, hta, dm, bmi, album35, hemog, 
+                sbp_control, dbp_control, death2y, eventd2ylab, death5y, eventd5ylab) %>% 
+  gtsummary::tbl_summary(
+  by = grf_cat, 
+  type = all_continuous() ~ "continuous2",
+  statistic = all_continuous() ~ c(
+    "{mean} ({sd})",
+    "{median} ({p25} - {p75})", 
+    "{min} - {max}"
+  ),
+  digits = list(all_continuous() ~ c(1, 1, 1, 1), 
+                all_categorical() ~ c(0, 1)), 
+  missing_text = "Missing"
+  ) %>% 
+  # add_p() %>% 
+  bold_labels() %>% 
+  modify_caption("Table S3. Baseline characteristics of the study population according CKD Stages") -> tabS3
+
+tabS3 %>% 
+  as_flex_table() %>% 
+  flextable::save_as_docx(path = "Tables/TableS3.docx")
+
+tabS3 %>% 
+  gtsummary::as_kable_extra() %>%
+  kableExtra::kable_styling("striped")
+```
+
+### Tabla S4 {#sec-tableS4}
+
+```{r}
+#| label: table-S4-code
+
+data %>%  
+  filter(ckd_stage == "Stages 3-4") %>% 
+  dplyr::select(cas) %>% 
+  gtsummary::tbl_summary(
+  type = all_continuous() ~ "continuous2",
+  statistic = all_continuous() ~ c(
+    "{mean} ({sd})",
+    "{median} ({min}, {max})"
+  ),
+  digits = list(all_categorical() ~ c(0, 1)), 
+  percent = "row"
+  ) %>%
+  bold_labels() -> tab1a
+
+data %>%  
+  filter(ckd_stage2 == "Stages 3b-4") %>% 
+  dplyr::select(cas) %>% 
+  gtsummary::tbl_summary(
+  type = all_continuous() ~ "continuous2",
+  statistic = all_continuous() ~ c(
+    "{mean} ({sd})",
+    "{median} ({min}, {max})"
+  ),
+  digits = list(all_categorical() ~ c(0, 1)), 
+  percent = "row"
+  ) %>%
+  bold_labels() -> tab1b
+
+data %>%  
+  filter(ckd_stage == "Stages 3-4") %>% 
+  dplyr::select(cas, eventd5ylab) %>%  
+  gtsummary::tbl_summary(
+  by = "eventd5ylab",   
+  type = all_continuous() ~ "continuous2",
+  statistic = all_continuous() ~ c(
+    "{mean} ({sd})",
+    "{median} ({min}, {max})"
+  ),
+  digits = list(all_categorical() ~ c(0, 1)), 
+  percent = "row"
+  ) %>%  
+  bold_labels() -> tab2a
+
+data %>%  
+  filter(ckd_stage2 == "Stages 3b-4") %>% 
+  dplyr::select(cas, eventd5ylab) %>%  
+  gtsummary::tbl_summary(
+  by = "eventd5ylab",   
+  type = all_continuous() ~ "continuous2",
+  statistic = all_continuous() ~ c(
+    "{mean} ({sd})",
+    "{median} ({min}, {max})"
+  ),
+  digits = list(all_categorical() ~ c(0, 1)), 
+  percent = "row"
+  ) %>%  
+  bold_labels() -> tab2b
+
+tbl_merge(list(tab1a, tab2a, tab1b, tab2b), 
+          tab_spanner = c("Overall", "Outcome", "Overall", "Outcome")) %>% 
+  modify_caption("Table S4. Baseline characteristics of the study population according CKD Stages") -> tab
+
+tab %>% 
+  as_flex_table() %>% 
+  theme_booktabs() %>%  
+  bold(bold = TRUE, part = "header") %>% 
+  add_header_row(
+    values = c("", "CKD Stages 3a-3b-4", "CKD Stages 3a-3b-4"), 
+    colwidths = c(1, 4, 4)
+  ) %>% 
+  flextable::save_as_docx(path = "Tables/TableS3.docx")
+```
+
+```{r}
+#| label: table-S4
+tab %>% 
+  gtsummary::as_kable_extra() %>% 
+  add_header_above(c(" ", "CKD Stages 3a-3b-4" = 4, "CKD Stages 3b-4" = 4)) %>% 
+  kableExtra::kable_styling("striped")
+```
+
+### Tabla S5 {#sec-tableS5}
+
+```{r}
+#| label: table-S5
+
+kable(
+  res_ci, 
+  row.names = TRUE, 
+  caption = "Table S5. Cumulative incidence of Renal Failure by CKD Stages"
+  ) %>%
+  kable_styling("striped", position = "center") %>%
+  add_header_above(c(" " = 1, "Stages 3a-3b-4" = 3, "Stages 3b-4" = 3))
+```
+
+### Tabla S6 {#sec-tableS6}
+
+## Extras
+
+::: panel-tabset
+## 
+
+## Glimpse
+
+Se observa un resumen general del conjunto de datos con sus variables:
+
+```{r}
+#| label: view-data2
+#| output: true
+#| echo: true
+
+glimpse(data)
+```
+
+## Skim
+
+Asimismo, una exploración general de las principales medidas de resumen de cada variable del conjunto de datos:
+
+```{r}
+#| label: resume-data
+#| column: page
+#| echo: true
+
+skim(data)
+```
+
+## Ticket de Reprocubilidad
+
+```{r}
+#| label: repro_ticket
+#| column: page
+#| echo: true
+sessionInfo()
+```
+:::
