@@ -1,10 +1,3 @@
-
-<a href="https://zenodo.org/badge/latestdoi/461208380"><img src="https://zenodo.org/badge/461208380.svg" align="left" alt="DOI"></a>
-
-<div>
-[![](https://licensebuttons.net/l/zero/1.0/80x15.png)](http://creativecommons.org/publicdomain/zero/1.0/)
-</div>
-
 # Kidney Failure Prediction: Multicenter External Validation of the KFRE Model in Patients with CKD Stages 3-4 in Peru”
 
 R code repository to reproduce the result of the manuscript
@@ -157,4 +150,4 @@ may then knit both quarto files, or run them line-by-line.
 
 ## Licence
 
-Creative Commons CC0 Public Domain
+MIT
