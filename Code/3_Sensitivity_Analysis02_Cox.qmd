@@ -1,33 +1,19 @@
 ---
 title: "3 - Sensitivy Analysis: Analysis ignoring competing risk"
-subtitle: "Code to reproduce results of the manuscript 'Kidney Failure Prediction: Multicenter External Validation of the KFRE Model in Patients with CKD Stages 3-4 in Peru'"
 author: 
   - name: Percy Soto-Becerra
     url: https://github.com/psotob91
 date: last-modified
 lang: en
 format: 
-  html:
-    embed-resources: true
-    number-sections: true
-    number-depth: 3
-    anchor-sections: true
-    code-fold: true
-    code-summary: "Show code"
-    code-overflow: wrap
-    code-tools: true
-    code-link: true
-    code-block-bg: "#f1f3f5"
-    code-block-border-left: "#31BAE9"
-    theme: 
-      light: journal
-      dark: darkly
-    highlight-style: espresso
-    mainfont: Source Sans Pro
-    html-math-method: katex
+  gfm:     
+    preview-mode: raw
+    preserve-tabs: true
     toc: true
+    toc-depth: 4
+    number-sections: true
+prefer-html: true
 editor: source
-
 execute: 
   warning: false
   message: false
@@ -35,6 +21,8 @@ execute:
   echo: true
   column: page
 ---
+
+# Code to reproduce results of the manuscript 'Kidney Failure Prediction: Multicenter External Validation of the KFRE Model in Patients with CKD Stages 3-4 in Peru'
 
 ## Introduction
 
