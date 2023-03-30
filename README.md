@@ -1,17 +1,4 @@
 
-- <a
-  href="#kidney-failure-prediction-multicenter-external-validation-of-the-kfre-model-in-patients-with-ckd-stages-3-4-in-peru"
-  id="toc-kidney-failure-prediction-multicenter-external-validation-of-the-kfre-model-in-patients-with-ckd-stages-3-4-in-peru"><span
-  class="toc-section-number">1</span> Kidney Failure Prediction:
-  Multicenter External Validation of the KFRE Model in Patients with CKD
-  Stages 3-4 in Peru</a>
-  - <a href="#usage" id="toc-usage"><span
-    class="toc-section-number">1.1</span> Usage</a>
-  - <a href="#contributions" id="toc-contributions"><span
-    class="toc-section-number">1.2</span> Contributions</a>
-  - <a href="#licence" id="toc-licence"><span
-    class="toc-section-number">1.3</span> Licence</a>
-
 # Kidney Failure Prediction: Multicenter External Validation of the KFRE Model in Patients with CKD Stages 3-4 in Peru
 
 R code repository to reproduce the result of the manuscript

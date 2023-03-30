@@ -3,9 +3,6 @@ format:
   gfm:     
     preview-mode: raw
     preserve-tabs: true
-    toc: true
-    toc-depth: 4
-    number-sections: true
 ---
 
 # Kidney Failure Prediction: Multicenter External Validation of the KFRE Model in Patients with CKD Stages 3-4 in Peru
