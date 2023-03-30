@@ -27,22 +27,22 @@ The repository contains the following code:
 - `Code/`: Folder with reproducible code for the analysis
 
   - `1_Analysis_Code_Minimal_Results.qmd` contains the
-    [code](https://github.com/psotob91/kfre-ckd-reba-peru/blob/main/Code/1_Analysis_Code_Minimal_Results.qmd)
+    [**code**](https://github.com/psotob91/kfre-ckd-reba-peru/blob/main/Code/1_Analysis_Code_Minimal_Results.qmd)
     to reproduce the main results showed in the manuscript. Results of
     rendering this code is found on
-    [1_Analysis_Code_Minimal_Results.html](https://github.com/psotob91/kfre-ckd-reba-peru/blob/main/Code/1_Analysis_Code_Minimal_Results.md).
+    [**1_Analysis_Code_Minimal_Results.md**](https://github.com/psotob91/kfre-ckd-reba-peru/blob/main/Code/1_Analysis_Code_Minimal_Results.md).
 
   - `2_Sensitivity_Analysis01_wo_outliers.qmd` contains the
-    [code](https://github.com/psotob91/kfre-ckd-reba-peru/blob/main/Code/2_Sensitiviy_Analysis01_wo_outliers.qmd)
+    [**code**](https://github.com/psotob91/kfre-ckd-reba-peru/blob/main/Code/2_Sensitiviy_Analysis01_wo_outliers.qmd)
     to reproduce the analysis excluding outliers trough winzoring of
     ACR. Results of rendering this code is found on
-    [2_Sensitivity_Analysis01_wo_outliers.html](https://github.com/psotob91/kfre-ckd-reba-peru/blob/main/Code/2_Sensitiviy_Analysis01_wo_outliers.md).
+    [**2_Sensitivity_Analysis01_wo_outliers.md**](https://github.com/psotob91/kfre-ckd-reba-peru/blob/main/Code/2_Sensitiviy_Analysis01_wo_outliers.md).
 
   - `3_Sensitivity_Analysis02_Cox.qmd` contains the
-    [code](https://github.com/psotob91/kfre-ckd-reba-peru/blob/main/Code/3_Sensitivity_Analysis02_Cox.qmd)
+    [**code**](https://github.com/psotob91/kfre-ckd-reba-peru/blob/main/Code/3_Sensitivity_Analysis02_Cox.qmd)
     to reprdocue teh analysis disregarding competing risks. Results of
     rendering this code is found on
-    [3_Sensitivity_Analysis02_Cox.html](https://github.com/psotob91/kfre-ckd-reba-peru/blob/main/Code/3_Sensitivity_Analysis02_Cox.md).
+    [**3_Sensitivity_Analysis02_Cox.md**](https://github.com/psotob91/kfre-ckd-reba-peru/blob/main/Code/3_Sensitivity_Analysis02_Cox.md).
 
 - `Figures/`: Folder with figures of the manuscript.
 
