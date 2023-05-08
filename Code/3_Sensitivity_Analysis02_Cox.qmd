@@ -909,7 +909,7 @@ ggsave(filename = "Plot_Calibration_cox.png",
 #| fig.height: 7
 #| fig.align: center
 #| column: page
-plot_calibration
+knitr::include_graphics(here("Figures", "Plot_Calibration_cox.png"))
 ```
 
 ### Discrimination
@@ -1339,7 +1339,7 @@ res_discr_discr <-
   ) %>% 
   select(metrica, starts_with("est")) 
 
-rbind(avg_pred, avg_obs, OE_summary, res_cal, res_discr_C, res_discr_discr) -> table_performance; table_performance
+rbind(avg_pred, avg_obs, OE_summary, res_cal, res_discr_C, res_discr_discr) -> table_performance
 ```
 
 ```{r}
@@ -1370,8 +1370,11 @@ table_performance %>%
 
 table_perf_final %>% 
   flextable::save_as_docx(path = here("Tables/TableS12.docx"))
+```
 
-table_perf_final
+
+```{r}
+plot(table_perf_final)
 ```
 
 

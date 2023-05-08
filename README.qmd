@@ -87,7 +87,7 @@ In either case, you can then use the `kfre-ckd-reba-peru.Rproj` file to open and
 ## Contributions
 
 | Name                                                   | Affiliation                             | Role                                    |
-|-------------------------|-----------------------------|------------------|
+|--------------------------------------------------------|-----------------------------------------|-----------------------------------------|
 | [**Percy Soto Becerra**](https://github.com/psotob91/) | Universidad Continental, Huancayo, Perú | Author/maintainer and creator of R code |
 
 ## Licence

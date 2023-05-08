@@ -264,6 +264,10 @@ ggsave(filename = "plot_flowchart.png",
 
 
 ```{r}
+#| label: fig-flow
+#| fig.width: 7
+#| fig.height: 14
+#| fig-cap: "Study flowchart"
 knitr::include_graphics(here("Figures/plot_flowchart.png"))
 ```
 
@@ -517,9 +521,8 @@ ggsave(filename = "Plot_CIF.png",
 #| label: fig-cif
 #| fig.width: 7
 #| fig.height: 14
-#| fig-cap: "Cumulative incidence curves of the observed outcome probabilities in the population study for kidney failure or deathd without kidney failure"
-
-plot_cif
+#| fig-cap: "Cumulative incidence function curves for kidney failure (sky-blue line) and death before kidney failure (red line) in patients with (A) CKD stages 3a-3b-4 and (B) CKD stages 3b-4"
+knitr::include_graphics(here("Figures", "Plot_CIF.png"))
 ```
 
 ## Predictive Performance
@@ -1367,8 +1370,8 @@ ggsave(filename = "Plot_Calibration.png",
 #| fig.width: 7
 #| fig.height: 7
 #| fig.align: center
-#| fig-cap: "Calibration plots for each group and prediction horizon. The predicted probability is shown on the x asis, and the observed kindey failure rate is given on the y axis"
-plot_calibration
+#| fig-cap: "Calibration curves for each group and prediction horizon"
+knitr::include_graphics(here("Figures", "Plot_Calibration.png"))
 ```
 
 ### Discrimination
@@ -1864,8 +1867,11 @@ table_perf_final %>%
 
 ### Table 2 {#sec-table2}
 
+Table 2. Performance measures of KFRE in the external dataset of patients with CKD stages 3a-3b-4 and 3b-4.
+
 ```{r}
-table_perf_final
+#| echo: false
+plot(table_perf_final)
 ```
 
 ## Supplementary tables
@@ -1886,7 +1892,7 @@ table_kfre <- data.frame(
 knitr::kable(table_kfre, escape = TRUE, 
              col.names = c("Prediction horizons", 
                            "Original regional equation calibrated for predicted risk of kidney failure"), 
-             caption = "**Table S1.** KFRE equations externally validated by the study")
+             caption = "Table S1. KFRE equations externally validated by the study")
 ```
 
 
@@ -1906,7 +1912,7 @@ table_coding <- data.frame(
 ```{r}
 #| results: asis
 knitr::kable(table_coding, escape = TRUE, 
-             caption = "*Table S2.* Coding of variables")
+             caption = "Table S2. Coding of variables")
 ```
 
 ### Table S3 {#sec-tableS3}

@@ -1,7 +1,7 @@
 2 - Sensitivy Analysis: Analysis ignoring extreme values using winzoring
 ================
 Percy Soto-Becerra
-3/29/23
+5/7/23
 
 - <a
   href="#code-to-reproduce-results-of-the-manuscript-kidney-failure-prediction-multicenter-external-validation-of-the-kfre-model-in-patients-with-ckd-stages-3-4-in-peru"
@@ -119,7 +119,20 @@ pacman::p_load(
   ggtext, 
   DescTools
 )
+```
 
+    package 'rootSolve' successfully unpacked and MD5 sums checked
+    package 'lmom' successfully unpacked and MD5 sums checked
+    package 'expm' successfully unpacked and MD5 sums checked
+    package 'Exact' successfully unpacked and MD5 sums checked
+    package 'gld' successfully unpacked and MD5 sums checked
+    package 'BH' successfully unpacked and MD5 sums checked
+    package 'DescTools' successfully unpacked and MD5 sums checked
+
+    The downloaded binary packages are in
+    	C:\Users\Lenovo\AppData\Local\Temp\Rtmp4IIMwn\downloaded_packages
+
+``` r
 if (!require("smplot2")) devtools::install_github('smin95/smplot2', force = TRUE)
 
 library(smplot2)
@@ -310,14 +323,26 @@ tableS10 %>%
 tableS10
 ```
 
-<div id="gdqwjzznll" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>html {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
+<div id="dibqkknhxh" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#dibqkknhxh table {
+  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-#gdqwjzznll .gt_table {
+#dibqkknhxh thead, #dibqkknhxh tbody, #dibqkknhxh tfoot, #dibqkknhxh tr, #dibqkknhxh td, #dibqkknhxh th {
+  border-style: none;
+}
+
+#dibqkknhxh p {
+  margin: 0;
+  padding: 0;
+}
+
+#dibqkknhxh .gt_table {
   display: table;
   border-collapse: collapse;
+  line-height: normal;
   margin-left: auto;
   margin-right: auto;
   color: #333333;
@@ -340,24 +365,12 @@ tableS10
   border-left-color: #D3D3D3;
 }
 
-#gdqwjzznll .gt_heading {
-  background-color: #FFFFFF;
-  text-align: center;
-  border-bottom-color: #FFFFFF;
-  border-left-style: none;
-  border-left-width: 1px;
-  border-left-color: #D3D3D3;
-  border-right-style: none;
-  border-right-width: 1px;
-  border-right-color: #D3D3D3;
-}
-
-#gdqwjzznll .gt_caption {
+#dibqkknhxh .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#gdqwjzznll .gt_title {
+#dibqkknhxh .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -369,25 +382,37 @@ tableS10
   border-bottom-width: 0;
 }
 
-#gdqwjzznll .gt_subtitle {
+#dibqkknhxh .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
-  padding-top: 0;
-  padding-bottom: 6px;
+  padding-top: 3px;
+  padding-bottom: 5px;
   padding-left: 5px;
   padding-right: 5px;
   border-top-color: #FFFFFF;
   border-top-width: 0;
 }
 
-#gdqwjzznll .gt_bottom_border {
+#dibqkknhxh .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#dibqkknhxh .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#gdqwjzznll .gt_col_headings {
+#dibqkknhxh .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -402,7 +427,7 @@ tableS10
   border-right-color: #D3D3D3;
 }
 
-#gdqwjzznll .gt_col_heading {
+#dibqkknhxh .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -422,7 +447,7 @@ tableS10
   overflow-x: hidden;
 }
 
-#gdqwjzznll .gt_column_spanner_outer {
+#dibqkknhxh .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -434,15 +459,15 @@ tableS10
   padding-right: 4px;
 }
 
-#gdqwjzznll .gt_column_spanner_outer:first-child {
+#dibqkknhxh .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#gdqwjzznll .gt_column_spanner_outer:last-child {
+#dibqkknhxh .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#gdqwjzznll .gt_column_spanner {
+#dibqkknhxh .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -454,7 +479,11 @@ tableS10
   width: 100%;
 }
 
-#gdqwjzznll .gt_group_heading {
+#dibqkknhxh .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#dibqkknhxh .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -480,7 +509,7 @@ tableS10
   text-align: left;
 }
 
-#gdqwjzznll .gt_empty_group_heading {
+#dibqkknhxh .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -495,15 +524,15 @@ tableS10
   vertical-align: middle;
 }
 
-#gdqwjzznll .gt_from_md > :first-child {
+#dibqkknhxh .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#gdqwjzznll .gt_from_md > :last-child {
+#dibqkknhxh .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#gdqwjzznll .gt_row {
+#dibqkknhxh .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -522,7 +551,7 @@ tableS10
   overflow-x: hidden;
 }
 
-#gdqwjzznll .gt_stub {
+#dibqkknhxh .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -535,7 +564,7 @@ tableS10
   padding-right: 5px;
 }
 
-#gdqwjzznll .gt_stub_row_group {
+#dibqkknhxh .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -549,11 +578,15 @@ tableS10
   vertical-align: top;
 }
 
-#gdqwjzznll .gt_row_group_first td {
+#dibqkknhxh .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#gdqwjzznll .gt_summary_row {
+#dibqkknhxh .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#dibqkknhxh .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -563,16 +596,16 @@ tableS10
   padding-right: 5px;
 }
 
-#gdqwjzznll .gt_first_summary_row {
+#dibqkknhxh .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#gdqwjzznll .gt_first_summary_row.thick {
+#dibqkknhxh .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#gdqwjzznll .gt_last_summary_row {
+#dibqkknhxh .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -582,7 +615,7 @@ tableS10
   border-bottom-color: #D3D3D3;
 }
 
-#gdqwjzznll .gt_grand_summary_row {
+#dibqkknhxh .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -592,7 +625,7 @@ tableS10
   padding-right: 5px;
 }
 
-#gdqwjzznll .gt_first_grand_summary_row {
+#dibqkknhxh .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -602,11 +635,21 @@ tableS10
   border-top-color: #D3D3D3;
 }
 
-#gdqwjzznll .gt_striped {
+#dibqkknhxh .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#dibqkknhxh .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#gdqwjzznll .gt_table_body {
+#dibqkknhxh .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -615,7 +658,7 @@ tableS10
   border-bottom-color: #D3D3D3;
 }
 
-#gdqwjzznll .gt_footnotes {
+#dibqkknhxh .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -629,30 +672,8 @@ tableS10
   border-right-color: #D3D3D3;
 }
 
-#gdqwjzznll .gt_footnote {
+#dibqkknhxh .gt_footnote {
   margin: 0px;
-  font-size: 90%;
-  padding-left: 4px;
-  padding-right: 4px;
-  padding-left: 5px;
-  padding-right: 5px;
-}
-
-#gdqwjzznll .gt_sourcenotes {
-  color: #333333;
-  background-color: #FFFFFF;
-  border-bottom-style: none;
-  border-bottom-width: 2px;
-  border-bottom-color: #D3D3D3;
-  border-left-style: none;
-  border-left-width: 2px;
-  border-left-color: #D3D3D3;
-  border-right-style: none;
-  border-right-width: 2px;
-  border-right-color: #D3D3D3;
-}
-
-#gdqwjzznll .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -660,71 +681,92 @@ tableS10
   padding-right: 5px;
 }
 
-#gdqwjzznll .gt_left {
+#dibqkknhxh .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#dibqkknhxh .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#dibqkknhxh .gt_left {
   text-align: left;
 }
 
-#gdqwjzznll .gt_center {
+#dibqkknhxh .gt_center {
   text-align: center;
 }
 
-#gdqwjzznll .gt_right {
+#dibqkknhxh .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#gdqwjzznll .gt_font_normal {
+#dibqkknhxh .gt_font_normal {
   font-weight: normal;
 }
 
-#gdqwjzznll .gt_font_bold {
+#dibqkknhxh .gt_font_bold {
   font-weight: bold;
 }
 
-#gdqwjzznll .gt_font_italic {
+#dibqkknhxh .gt_font_italic {
   font-style: italic;
 }
 
-#gdqwjzznll .gt_super {
+#dibqkknhxh .gt_super {
   font-size: 65%;
 }
 
-#gdqwjzznll .gt_footnote_marks {
-  font-style: italic;
-  font-weight: normal;
+#dibqkknhxh .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
+  position: initial;
 }
 
-#gdqwjzznll .gt_asterisk {
+#dibqkknhxh .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#gdqwjzznll .gt_indent_1 {
+#dibqkknhxh .gt_indent_1 {
   text-indent: 5px;
 }
 
-#gdqwjzznll .gt_indent_2 {
+#dibqkknhxh .gt_indent_2 {
   text-indent: 10px;
 }
 
-#gdqwjzznll .gt_indent_3 {
+#dibqkknhxh .gt_indent_3 {
   text-indent: 15px;
 }
 
-#gdqwjzznll .gt_indent_4 {
+#dibqkknhxh .gt_indent_4 {
   text-indent: 20px;
 }
 
-#gdqwjzznll .gt_indent_5 {
+#dibqkknhxh .gt_indent_5 {
   text-indent: 25px;
 }
 </style>
-<table class="gt_table">
-  
-  <thead class="gt_col_headings">
-    <tr>
+<table class="gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+  <thead>
+    
+    <tr class="gt_col_headings gt_spanner_row">
       <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="2" colspan="1" scope="col" id="&lt;strong&gt;Characteristic&lt;/strong&gt;"><strong>Characteristic</strong></th>
       <th class="gt_center gt_columns_top_border gt_column_spanner_outer" rowspan="1" colspan="1" scope="col" id="&lt;strong&gt;Original data&lt;/strong&gt;">
         <span class="gt_column_spanner"><strong>Original data</strong></span>
@@ -733,7 +775,7 @@ tableS10
         <span class="gt_column_spanner"><strong>Winzorized outliers in ACR</strong></span>
       </th>
     </tr>
-    <tr>
+    <tr class="gt_col_headings">
       <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1" scope="col" id="&lt;strong&gt;N = 7,519&lt;/strong&gt;"><strong>N = 7,519</strong></th>
       <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1" scope="col" id="&lt;strong&gt;N = 7,519&lt;/strong&gt;"><strong>N = 7,519</strong></th>
     </tr>
@@ -1795,12 +1837,11 @@ ggsave(filename = "Plot_Calibration_sens_outlier.png",
 ### Figure S5
 
 ``` r
-plot_calibration
+knitr::include_graphics(here("Figures", "Plot_Calibration_sens_outlier.png"))
 ```
 
 <figure>
-<img
-src="2_Sensitiviy_Analysis01_wo_outliers_files/figure-commonmark/fig-loess-pseudo-ggpplot_sens_outlier-1.png"
+<img src="../Figures/Plot_Calibration_sens_outlier.png"
 id="fig-loess-pseudo-ggpplot_sens_outlier" data-fig-align="center"
 alt="Figure 2: Calibration plots for each group and prediction horizon. The predicted probability is shown on the x asis, and the observed kindey failure rate is given on the y axis" />
 <figcaption aria-hidden="true">Figure 2: Calibration plots for each
@@ -2299,7 +2340,7 @@ table_perf_final %>%
 ### Table S11
 
 ``` r
-table_perf_final
+plot(table_perf_final)
 ```
 
 ![](2_Sensitiviy_Analysis01_wo_outliers_files/figure-commonmark/unnamed-chunk-17-1.png)
@@ -2310,16 +2351,20 @@ table_perf_final
 sessionInfo()
 ```
 
-    R version 4.2.3 (2023-03-15 ucrt)
+    R version 4.3.0 (2023-04-21 ucrt)
     Platform: x86_64-w64-mingw32/x64 (64-bit)
-    Running under: Windows 10 x64 (build 22621)
+    Running under: Windows 11 x64 (build 22621)
 
     Matrix products: default
+
 
     locale:
     [1] LC_COLLATE=Spanish_Peru.utf8  LC_CTYPE=Spanish_Peru.utf8   
     [3] LC_MONETARY=Spanish_Peru.utf8 LC_NUMERIC=C                 
     [5] LC_TIME=Spanish_Peru.utf8    
+
+    time zone: America/Lima
+    tzcode source: internal
 
     attached base packages:
     [1] splines   stats     graphics  grDevices utils     datasets  methods  
@@ -2327,80 +2372,78 @@ sessionInfo()
 
     other attached packages:
      [1] smplot2_0.1.0             DescTools_0.99.48        
-     [3] ggtext_0.1.2              htmltools_0.5.4          
+     [3] ggtext_0.1.2              htmltools_0.5.5          
      [5] devtools_2.4.5            usethis_2.1.6            
-     [7] gghalves_0.1.4            xml2_1.3.3               
-     [9] downlit_0.4.2             broom_1.0.3              
+     [7] gghalves_0.1.4            xml2_1.3.4               
+     [9] downlit_0.4.2             broom_1.0.4              
     [11] dcurves_0.4.0             glue_1.6.2               
-    [13] labelled_2.10.0           scales_1.2.1             
-    [15] cowplot_1.1.1             ggsci_2.9                
+    [13] labelled_2.11.0           scales_1.2.1             
+    [15] cowplot_1.1.1             ggsci_3.0.0              
     [17] survminer_0.4.9           ggpubr_0.6.0             
     [19] patchwork_1.1.2           webshot_0.5.4            
     [21] gridExtra_2.3             rsample_1.1.1            
     [23] lubridate_1.9.2           forcats_1.0.0            
-    [25] stringr_1.5.0             dplyr_1.1.0              
+    [25] stringr_1.5.0             dplyr_1.1.2              
     [27] purrr_1.0.1               readr_2.1.4              
-    [29] tidyr_1.3.0               tibble_3.1.8             
-    [31] tidyverse_2.0.0           boot_1.3-28.1            
-    [33] gtsummary_1.7.0           flextable_0.8.6          
-    [35] kableExtra_1.3.4          knitr_1.42               
-    [37] plotrix_3.8-2             pec_2022.05.04           
-    [39] prodlim_2019.11.13        pseudo_1.4.3             
-    [41] geepack_1.3.9             KMsurv_0.1-5             
-    [43] mstate_0.3.2              riskRegression_2022.11.28
-    [45] cmprsk_2.2-11             rms_6.5-0                
-    [47] SparseM_1.81              Hmisc_4.8-0              
-    [49] ggplot2_3.4.1             Formula_1.2-5            
-    [51] lattice_0.20-45           survival_3.5-3           
-    [53] skimr_2.1.5               here_1.0.1               
+    [29] tidyr_1.3.0               tibble_3.2.1             
+    [31] ggplot2_3.4.2             tidyverse_2.0.0          
+    [33] boot_1.3-28.1             gtsummary_1.7.1          
+    [35] flextable_0.9.1           kableExtra_1.3.4         
+    [37] knitr_1.42                plotrix_3.8-2            
+    [39] pec_2023.04.12            prodlim_2023.03.31       
+    [41] pseudo_1.4.3              geepack_1.3.9            
+    [43] KMsurv_0.1-5              mstate_0.3.2             
+    [45] riskRegression_2023.03.22 cmprsk_2.2-11            
+    [47] rms_6.6-0                 Hmisc_5.0-1              
+    [49] survival_3.5-5            skimr_2.1.5              
+    [51] here_1.0.1               
 
     loaded via a namespace (and not attached):
-      [1] pacman_0.5.1            utf8_1.2.3              tidyselect_1.2.0       
-      [4] htmlwidgets_1.6.1       grid_4.2.3              munsell_0.5.0          
-      [7] codetools_0.2-19        ragg_1.2.5              interp_1.1-3           
-     [10] miniUI_0.1.1.1          future_1.31.0           withr_2.5.0            
-     [13] colorspace_2.1-0        uuid_1.1-0              rstudioapi_0.14        
-     [16] ggsignif_0.6.4          officer_0.6.0           fontLiberation_0.1.0   
-     [19] listenv_0.9.0           labeling_0.4.2          repr_1.1.6             
-     [22] mets_1.3.2              farver_2.1.1            rprojroot_2.0.3        
-     [25] parallelly_1.34.0       vctrs_0.5.2             generics_0.1.3         
-     [28] TH.data_1.1-1           xfun_0.37               timechange_0.2.0       
-     [31] fontquiver_0.2.1        R6_2.5.1                timereg_2.0.5          
-     [34] cachem_1.0.7            promises_1.2.0.1        multcomp_1.4-22        
-     [37] nnet_7.3-18             rootSolve_1.8.2.3       gtable_0.3.1           
-     [40] globals_0.16.2          processx_3.8.0          lmom_2.9               
-     [43] sandwich_3.0-2          rlang_1.0.6             MatrixModels_0.5-1     
-     [46] systemfonts_1.0.4       rstatix_0.7.2           checkmate_2.1.0        
-     [49] yaml_2.3.7              abind_1.4-5             backports_1.4.1        
-     [52] httpuv_1.6.9            gridtext_0.1.5          tools_4.2.3            
-     [55] lava_1.7.2.1            ellipsis_0.3.2          RColorBrewer_1.1-3     
-     [58] proxy_0.4-27            sessioninfo_1.2.2       Rcpp_1.0.10            
-     [61] base64enc_0.1-3         prettyunits_1.1.1       ps_1.7.2               
-     [64] rpart_4.1.19            openssl_2.0.5           deldir_1.0-6           
-     [67] urlchecker_1.0.1        zoo_1.8-11              haven_2.5.2            
-     [70] cluster_2.1.4           fs_1.6.1                furrr_0.3.1            
-     [73] crul_1.3                magrittr_2.0.3          data.table_1.14.8      
-     [76] mvtnorm_1.1-3           pkgload_1.3.2           hms_1.1.2              
-     [79] mime_0.12               evaluate_0.20           xtable_1.8-4           
-     [82] jpeg_0.1-10             readxl_1.4.2            compiler_4.2.3         
-     [85] fontBitstreamVera_0.1.1 gt_0.8.0                crayon_1.5.2           
-     [88] later_1.3.0             tzdb_0.3.0              expm_0.999-7           
-     [91] Exact_3.2               MASS_7.3-58.2           broom.helpers_1.12.0   
-     [94] sdamr_0.2.0             Matrix_1.5-3            car_3.1-1              
-     [97] cli_3.6.0               parallel_4.2.3          pkgconfig_2.0.3        
-    [100] km.ci_0.5-6             numDeriv_2016.8-1.1     foreign_0.8-84         
-    [103] foreach_1.5.2           svglite_2.1.1           rvest_1.0.3            
-    [106] callr_3.7.3             digest_0.6.31           httpcode_0.3.0         
-    [109] cellranger_1.1.0        rmarkdown_2.20          survMisc_0.5.6         
-    [112] htmlTable_2.4.1         gld_2.6.6               gdtools_0.3.1          
-    [115] curl_5.0.0              commonmark_1.8.1        shiny_1.7.4            
-    [118] quantreg_5.94           pwr_1.3-0               lifecycle_1.0.3        
-    [121] nlme_3.1-162            jsonlite_1.8.4          carData_3.0-5          
-    [124] viridisLite_0.4.1       askpass_1.1             fansi_1.0.4            
-    [127] pillar_1.8.1            pkgbuild_1.4.0          fastmap_1.1.1          
-    [130] httr_1.4.5              remotes_2.4.2           zip_2.2.2              
-    [133] png_0.1-8               iterators_1.0.14        sass_0.4.5             
-    [136] class_7.3-21            profvis_0.3.7           stringi_1.7.12         
-    [139] polspline_1.1.22        textshaping_0.3.6       gfonts_0.2.0           
-    [142] latticeExtra_0.6-30     memoise_2.0.1           e1071_1.7-13           
-    [145] future.apply_1.10.0    
+      [1] fs_1.6.2                httr_1.4.5              repr_1.1.6             
+      [4] numDeriv_2016.8-1.1     profvis_0.3.8           tools_4.3.0            
+      [7] backports_1.4.1         utf8_1.2.3              R6_2.5.1               
+     [10] urlchecker_1.0.1        withr_2.5.0             prettyunits_1.1.1      
+     [13] quantreg_5.95           cli_3.6.1               textshaping_0.3.6      
+     [16] gt_0.9.0                pacman_0.5.1            officer_0.6.2          
+     [19] sandwich_3.0-2          sass_0.4.5              labeling_0.4.2         
+     [22] mvtnorm_1.1-3           survMisc_0.5.6          polspline_1.1.22       
+     [25] proxy_0.4-27            askpass_1.1             commonmark_1.9.0       
+     [28] systemfonts_1.0.4       foreign_0.8-84          gfonts_0.2.0           
+     [31] svglite_2.1.1           parallelly_1.35.0       sessioninfo_1.2.2      
+     [34] readxl_1.4.2            pwr_1.3-0               rstudioapi_0.14        
+     [37] httpcode_0.3.0          generics_0.1.3          car_3.1-2              
+     [40] zip_2.3.0               Matrix_1.5-4            fansi_1.0.4            
+     [43] abind_1.4-5             lifecycle_1.0.3         multcomp_1.4-23        
+     [46] yaml_2.3.7              carData_3.0-5           grid_4.3.0             
+     [49] promises_1.2.0.1        crayon_1.5.2            miniUI_0.1.1.1         
+     [52] lattice_0.21-8          haven_2.5.2             pillar_1.9.0           
+     [55] gld_2.6.6               future.apply_1.10.0     codetools_0.2-19       
+     [58] fontLiberation_0.1.0    data.table_1.14.8       broom.helpers_1.13.0   
+     [61] remotes_2.4.2           png_0.1-8               vctrs_0.6.2            
+     [64] cellranger_1.1.0        gtable_0.3.3            cachem_1.0.8           
+     [67] xfun_0.39               mime_0.12               iterators_1.0.14       
+     [70] lava_1.7.2.1            ellipsis_0.3.2          TH.data_1.1-2          
+     [73] nlme_3.1-162            fontquiver_0.2.1        rprojroot_2.0.3        
+     [76] rpart_4.1.19            colorspace_2.1-0        nnet_7.3-18            
+     [79] Exact_3.2               tidyselect_1.2.0        processx_3.8.1         
+     [82] compiler_4.3.0          curl_5.0.0              sdamr_0.2.0            
+     [85] rvest_1.0.3             htmlTable_2.4.1         SparseM_1.81           
+     [88] expm_0.999-7            fontBitstreamVera_0.1.1 checkmate_2.2.0        
+     [91] callr_3.7.3             digest_0.6.31           rmarkdown_2.21         
+     [94] pkgconfig_2.0.3         base64enc_0.1-3         fastmap_1.1.1          
+     [97] rlang_1.1.1             htmlwidgets_1.6.2       shiny_1.7.4            
+    [100] farver_2.1.1            zoo_1.8-12              jsonlite_1.8.4         
+    [103] magrittr_2.0.3          Formula_1.2-5           munsell_0.5.0          
+    [106] Rcpp_1.0.10             gdtools_0.3.3           furrr_0.3.1            
+    [109] stringi_1.7.12          rootSolve_1.8.2.3       MASS_7.3-59            
+    [112] pkgbuild_1.4.0          parallel_4.3.0          listenv_0.9.0          
+    [115] mets_1.3.2              lmom_2.9                gridtext_0.1.5         
+    [118] hms_1.1.3               ps_1.7.5                timereg_2.0.5          
+    [121] uuid_1.1-0              markdown_1.6            ggsignif_0.6.4         
+    [124] pkgload_1.3.2           crul_1.3                evaluate_0.20          
+    [127] tzdb_0.3.0              foreach_1.5.2           httpuv_1.6.9           
+    [130] MatrixModels_0.5-1      openssl_2.0.6           future_1.32.0          
+    [133] km.ci_0.5-6             xtable_1.8-4            e1071_1.7-13           
+    [136] rstatix_0.7.2           later_1.3.1             viridisLite_0.4.2      
+    [139] class_7.3-21            ragg_1.2.5              memoise_2.0.1          
+    [142] cluster_2.1.4           timechange_0.2.0        globals_0.16.2         

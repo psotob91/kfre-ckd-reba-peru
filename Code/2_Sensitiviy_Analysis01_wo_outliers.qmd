@@ -1308,9 +1308,11 @@ ggsave(filename = "Plot_Calibration_sens_outlier.png",
 #| fig.width: 7
 #| fig.height: 7
 #| fig.align: center
+#| column: page
 #| fig-cap: "Calibration plots for each group and prediction horizon. The predicted probability is shown on the x asis, and the observed kindey failure rate is given on the y axis"
-plot_calibration
+knitr::include_graphics(here("Figures", "Plot_Calibration_sens_outlier.png"))
 ```
+
 
 ### Discrimination
 
@@ -1811,7 +1813,7 @@ table_perf_final %>%
 ### Table S11
 
 ```{r}
-table_perf_final
+plot(table_perf_final)
 ```
 
 ## Ticket de Reprocubilidad

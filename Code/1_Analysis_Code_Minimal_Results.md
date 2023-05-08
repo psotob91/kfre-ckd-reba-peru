@@ -1,7 +1,7 @@
 1 - Main analysis
 ================
 Percy Soto-Becerra
-3/29/23
+5/7/23
 
 <script src="1_Analysis_Code_Minimal_Results_files/libs/kePrint-0.0.1/kePrint.js"></script>
 <link href="1_Analysis_Code_Minimal_Results_files/libs/lightable-0.0.1/lightable.css" rel="stylesheet" />
@@ -341,7 +341,11 @@ ggsave(filename = "plot_flowchart.png",
 knitr::include_graphics(here("Figures/plot_flowchart.png"))
 ```
 
-![](../Figures/plot_flowchart.png)
+<figure>
+<img src="../Figures/plot_flowchart.png" id="fig-flow"
+alt="Figure 1: Study flowchart" />
+<figcaption aria-hidden="true">Figure 1: Study flowchart</figcaption>
+</figure>
 
 ### Table 1
 
@@ -695,7 +699,7 @@ tab1 %>%
 
 ## Cumulative incidence function for competing risks data
 
-Figure [Figure 1](#fig-cif) shows the cumulative incidence curves of
+Figure [Figure 2](#fig-cif) shows the cumulative incidence curves of
 renal failure and pre-renal failure death in the study patients.
 
 ``` r
@@ -872,17 +876,16 @@ ggsave(filename = "Plot_CIF.png",
 ### Fig 2
 
 ``` r
-plot_cif
+knitr::include_graphics(here("Figures", "Plot_CIF.png"))
 ```
 
 <figure>
-<img
-src="1_Analysis_Code_Minimal_Results_files/figure-commonmark/fig-cif-1.png"
-id="fig-cif"
-alt="Figure 1: Cumulative incidence curves of the observed outcome probabilities in the population study for kidney failure or deathd without kidney failure" />
-<figcaption aria-hidden="true">Figure 1: Cumulative incidence curves of
-the observed outcome probabilities in the population study for kidney
-failure or deathd without kidney failure</figcaption>
+<img src="../Figures/Plot_CIF.png" id="fig-cif"
+alt="Figure 2: Cumulative incidence function curves for kidney failure (sky-blue line) and death before kidney failure (red line) in patients with (A) CKD stages 3a-3b-4 and (B) CKD stages 3b-4" />
+<figcaption aria-hidden="true">Figure 2: Cumulative incidence function
+curves for kidney failure (sky-blue line) and death before kidney
+failure (red line) in patients with (A) CKD stages 3a-3b-4 and (B) CKD
+stages 3b-4</figcaption>
 </figure>
 
 ## Predictive Performance
@@ -1717,18 +1720,15 @@ ggsave(filename = "Plot_Calibration.png",
 ### Fig 3
 
 ``` r
-plot_calibration
+knitr::include_graphics(here("Figures", "Plot_Calibration.png"))
 ```
 
 <figure>
-<img
-src="1_Analysis_Code_Minimal_Results_files/figure-commonmark/fig-loess-pseudo-ggpplot-1.png"
-id="fig-loess-pseudo-ggpplot" data-fig-align="center"
-alt="Figure 2: Calibration plots for each group and prediction horizon. The predicted probability is shown on the x asis, and the observed kindey failure rate is given on the y axis" />
-<figcaption aria-hidden="true">Figure 2: Calibration plots for each
-group and prediction horizon. The predicted probability is shown on the
-x asis, and the observed kindey failure rate is given on the y
-axis</figcaption>
+<img src="../Figures/Plot_Calibration.png" id="fig-loess-pseudo-ggpplot"
+data-fig-align="center"
+alt="Figure 3: Calibration curves for each group and prediction horizon" />
+<figcaption aria-hidden="true">Figure 3: Calibration curves for each
+group and prediction horizon</figcaption>
 </figure>
 
 ### Discrimination
@@ -2216,9 +2216,8 @@ table_perf_final %>%
 
 ### Table 2
 
-``` r
-table_perf_final
-```
+Table 2. Performance measures of KFRE in the external dataset of
+patients with CKD stages 3a-3b-4 and 3b-4.
 
 ![](1_Analysis_Code_Minimal_Results_files/figure-commonmark/unnamed-chunk-15-1.png)
 
@@ -2238,13 +2237,13 @@ table_kfre <- data.frame(
 knitr::kable(table_kfre, escape = TRUE, 
              col.names = c("Prediction horizons", 
                            "Original regional equation calibrated for predicted risk of kidney failure"), 
-             caption = "**Table S1.** KFRE equations externally validated by the study")
+             caption = "Table S1. KFRE equations externally validated by the study")
 ```
 
 <div class="cell-output-display">
 
 <table>
-<caption>**Table S1.** KFRE equations externally validated by the study</caption>
+<caption>Table S1. KFRE equations externally validated by the study</caption>
  <thead>
   <tr>
    <th style="text-align:left;"> Prediction horizons </th>
@@ -2279,13 +2278,13 @@ table_coding <- data.frame(
 
 ``` r
 knitr::kable(table_coding, escape = TRUE, 
-             caption = "*Table S2.* Coding of variables")
+             caption = "Table S2. Coding of variables")
 ```
 
 <div class="cell-output-display">
 
 <table>
-<caption>*Table S2.* Coding of variables</caption>
+<caption>Table S2. Coding of variables</caption>
  <thead>
   <tr>
    <th style="text-align:left;"> Variable </th>
@@ -2442,7 +2441,7 @@ tab %>%
   <tr>
    <td style="text-align:left;padding-left: 2em;" indentlevel="1"> Median (IQR) </td>
    <td style="text-align:center;"> 75.0 (68.0, 81.0) </td>
-   <td style="text-align:center;"> 67.0 (59.2, 74.0) </td>
+   <td style="text-align:center;"> 67.0 (59.3, 74.0) </td>
    <td style="text-align:center;"> 75.0 (68.0, 82.0) </td>
    <td style="text-align:center;"> 67.0 (59.0, 75.0) </td>
   </tr>
@@ -2896,7 +2895,7 @@ tab %>%
    <td style="text-align:center;"> 77.0 (70.0, 83.0) </td>
    <td style="text-align:center;"> 67.0 (59.0, 74.0) </td>
    <td style="text-align:center;"> 77.0 (70.0, 83.0) </td>
-   <td style="text-align:center;"> 67.0 (59.2, 75.0) </td>
+   <td style="text-align:center;"> 67.0 (59.3, 75.0) </td>
   </tr>
   <tr>
    <td style="text-align:left;padding-left: 2em;" indentlevel="1"> Range </td>
@@ -4376,8 +4375,8 @@ knitr::include_graphics(here("Figures/plot_dist_vars.png"))
 <figure>
 <img src="../Figures/plot_dist_vars.png" id="fig-plot-dist-vars"
 data-fig-align="center"
-alt="Figure 3: Distribution of four variables of KFRE equation in CKD 3-4 and CKD 3b-4 patientes. (A) age in years, (B) estimate glomerural filtration rate (eGFR) according to CKD-EPI formula, (C) urine albumin to creatinine ratio (ACR) expressed in original scale and in (D) natural logarithm scale for better comparison of the distributions." />
-<figcaption aria-hidden="true">Figure 3: Distribution of four variables
+alt="Figure 4: Distribution of four variables of KFRE equation in CKD 3-4 and CKD 3b-4 patientes. (A) age in years, (B) estimate glomerural filtration rate (eGFR) according to CKD-EPI formula, (C) urine albumin to creatinine ratio (ACR) expressed in original scale and in (D) natural logarithm scale for better comparison of the distributions." />
+<figcaption aria-hidden="true">Figure 4: Distribution of four variables
 of KFRE equation in CKD 3-4 and CKD 3b-4 patientes. (A) age in years,
 (B) estimate glomerural filtration rate (eGFR) according to CKD-EPI
 formula, (C) urine albumin to creatinine ratio (ACR) expressed in
@@ -4487,8 +4486,8 @@ knitr::include_graphics(here("Figures/plot_dist_risks.png"))
 <figure>
 <img src="../Figures/plot_dist_risks.png" id="fig-plot-dist-risks"
 data-fig-align="center"
-alt="Figure 4: Distribution of the 2-year and 5-year predicted risk estimated by KFRE equation according kidney failure" />
-<figcaption aria-hidden="true">Figure 4: Distribution of the 2-year and
+alt="Figure 5: Distribution of the 2-year and 5-year predicted risk estimated by KFRE equation according kidney failure" />
+<figcaption aria-hidden="true">Figure 5: Distribution of the 2-year and
 5-year predicted risk estimated by KFRE equation according kidney
 failure</figcaption>
 </figure>
@@ -4548,13 +4547,25 @@ tabS13
 ```
 
 <div id="nnktzmqmjh" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>html {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
+<style>#nnktzmqmjh table {
+  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#nnktzmqmjh thead, #nnktzmqmjh tbody, #nnktzmqmjh tfoot, #nnktzmqmjh tr, #nnktzmqmjh td, #nnktzmqmjh th {
+  border-style: none;
+}
+
+#nnktzmqmjh p {
+  margin: 0;
+  padding: 0;
 }
 
 #nnktzmqmjh .gt_table {
   display: table;
   border-collapse: collapse;
+  line-height: normal;
   margin-left: auto;
   margin-right: auto;
   color: #333333;
@@ -4575,18 +4586,6 @@ tabS13
   border-left-style: none;
   border-left-width: 2px;
   border-left-color: #D3D3D3;
-}
-
-#nnktzmqmjh .gt_heading {
-  background-color: #FFFFFF;
-  text-align: center;
-  border-bottom-color: #FFFFFF;
-  border-left-style: none;
-  border-left-width: 1px;
-  border-left-color: #D3D3D3;
-  border-right-style: none;
-  border-right-width: 1px;
-  border-right-color: #D3D3D3;
 }
 
 #nnktzmqmjh .gt_caption {
@@ -4610,12 +4609,24 @@ tabS13
   color: #333333;
   font-size: 85%;
   font-weight: initial;
-  padding-top: 0;
-  padding-bottom: 6px;
+  padding-top: 3px;
+  padding-bottom: 5px;
   padding-left: 5px;
   padding-right: 5px;
   border-top-color: #FFFFFF;
   border-top-width: 0;
+}
+
+#nnktzmqmjh .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
 }
 
 #nnktzmqmjh .gt_bottom_border {
@@ -4689,6 +4700,10 @@ tabS13
   overflow-x: hidden;
   display: inline-block;
   width: 100%;
+}
+
+#nnktzmqmjh .gt_spanner_row {
+  border-bottom-style: hidden;
 }
 
 #nnktzmqmjh .gt_group_heading {
@@ -4790,6 +4805,10 @@ tabS13
   border-top-width: 2px;
 }
 
+#nnktzmqmjh .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
 #nnktzmqmjh .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
@@ -4839,6 +4858,16 @@ tabS13
   border-top-color: #D3D3D3;
 }
 
+#nnktzmqmjh .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
 #nnktzmqmjh .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
@@ -4869,8 +4898,8 @@ tabS13
 #nnktzmqmjh .gt_footnote {
   margin: 0px;
   font-size: 90%;
-  padding-left: 4px;
-  padding-right: 4px;
+  padding-top: 4px;
+  padding-bottom: 4px;
   padding-left: 5px;
   padding-right: 5px;
 }
@@ -4927,10 +4956,9 @@ tabS13
 }
 
 #nnktzmqmjh .gt_footnote_marks {
-  font-style: italic;
-  font-weight: normal;
   font-size: 75%;
   vertical-align: 0.4em;
+  position: initial;
 }
 
 #nnktzmqmjh .gt_asterisk {
@@ -4958,17 +4986,17 @@ tabS13
   text-indent: 25px;
 }
 </style>
-<table class="gt_table">
-  
-  <thead class="gt_col_headings">
-    <tr>
+<table class="gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+  <thead>
+    
+    <tr class="gt_col_headings gt_spanner_row">
       <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="2" colspan="1" scope="col" id="Characteristics">Characteristics</th>
       <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="2" colspan="1" scope="col" id="Original Study (Non-North American population)">Original Study (Non-North American population)</th>
       <th class="gt_center gt_columns_top_border gt_column_spanner_outer" rowspan="1" colspan="2" scope="colgroup" id="Current study">
         <span class="gt_column_spanner">Current study</span>
       </th>
     </tr>
-    <tr>
+    <tr class="gt_col_headings">
       <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="CKD Stages 3a-4">CKD Stages 3a-4</th>
       <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="CKD Stages 3b-4">CKD Stages 3b-4</th>
     </tr>
@@ -5018,16 +5046,20 @@ tabS13
 sessionInfo()
 ```
 
-    R version 4.2.3 (2023-03-15 ucrt)
+    R version 4.3.0 (2023-04-21 ucrt)
     Platform: x86_64-w64-mingw32/x64 (64-bit)
-    Running under: Windows 10 x64 (build 22621)
+    Running under: Windows 11 x64 (build 22621)
 
     Matrix products: default
+
 
     locale:
     [1] LC_COLLATE=Spanish_Peru.utf8  LC_CTYPE=Spanish_Peru.utf8   
     [3] LC_MONETARY=Spanish_Peru.utf8 LC_NUMERIC=C                 
     [5] LC_TIME=Spanish_Peru.utf8    
+
+    time zone: America/Lima
+    tzcode source: internal
 
     attached base packages:
     [1] splines   stats     graphics  grDevices utils     datasets  methods  
@@ -5035,78 +5067,77 @@ sessionInfo()
 
     other attached packages:
      [1] smplot2_0.1.0             janitor_2.2.0            
-     [3] gt_0.8.0                  DiagrammeR_1.0.9         
-     [5] ggtext_0.1.2              htmltools_0.5.4          
+     [3] gt_0.9.0                  DiagrammeR_1.0.9         
+     [5] ggtext_0.1.2              htmltools_0.5.5          
      [7] devtools_2.4.5            usethis_2.1.6            
-     [9] gghalves_0.1.4            xml2_1.3.3               
-    [11] downlit_0.4.2             broom_1.0.3              
+     [9] gghalves_0.1.4            xml2_1.3.4               
+    [11] downlit_0.4.2             broom_1.0.4              
     [13] dcurves_0.4.0             glue_1.6.2               
-    [15] labelled_2.10.0           scales_1.2.1             
-    [17] cowplot_1.1.1             ggsci_2.9                
+    [15] labelled_2.11.0           scales_1.2.1             
+    [17] cowplot_1.1.1             ggsci_3.0.0              
     [19] survminer_0.4.9           ggpubr_0.6.0             
     [21] patchwork_1.1.2           webshot_0.5.4            
     [23] gridExtra_2.3             rsample_1.1.1            
     [25] lubridate_1.9.2           forcats_1.0.0            
-    [27] stringr_1.5.0             dplyr_1.1.0              
+    [27] stringr_1.5.0             dplyr_1.1.2              
     [29] purrr_1.0.1               readr_2.1.4              
-    [31] tidyr_1.3.0               tibble_3.1.8             
-    [33] tidyverse_2.0.0           boot_1.3-28.1            
-    [35] gtsummary_1.7.0           flextable_0.8.6          
-    [37] kableExtra_1.3.4          knitr_1.42               
-    [39] plotrix_3.8-2             pec_2022.05.04           
-    [41] prodlim_2019.11.13        pseudo_1.4.3             
-    [43] geepack_1.3.9             KMsurv_0.1-5             
-    [45] mstate_0.3.2              riskRegression_2022.11.28
-    [47] cmprsk_2.2-11             rms_6.5-0                
-    [49] SparseM_1.81              Hmisc_4.8-0              
-    [51] ggplot2_3.4.1             Formula_1.2-5            
-    [53] lattice_0.20-45           survival_3.5-3           
-    [55] skimr_2.1.5               here_1.0.1               
+    [31] tidyr_1.3.0               tibble_3.2.1             
+    [33] ggplot2_3.4.2             tidyverse_2.0.0          
+    [35] boot_1.3-28.1             gtsummary_1.7.1          
+    [37] flextable_0.9.1           kableExtra_1.3.4         
+    [39] knitr_1.42                plotrix_3.8-2            
+    [41] pec_2023.04.12            prodlim_2023.03.31       
+    [43] pseudo_1.4.3              geepack_1.3.9            
+    [45] KMsurv_0.1-5              mstate_0.3.2             
+    [47] riskRegression_2023.03.22 cmprsk_2.2-11            
+    [49] rms_6.6-0                 Hmisc_5.0-1              
+    [51] survival_3.5-5            skimr_2.1.5              
+    [53] here_1.0.1               
 
     loaded via a namespace (and not attached):
-      [1] pacman_0.5.1            utf8_1.2.3              tidyselect_1.2.0       
-      [4] htmlwidgets_1.6.1       grid_4.2.3              munsell_0.5.0          
-      [7] codetools_0.2-19        ragg_1.2.5              interp_1.1-3           
-     [10] miniUI_0.1.1.1          future_1.31.0           withr_2.5.0            
-     [13] colorspace_2.1-0        highr_0.10              uuid_1.1-0             
-     [16] rstudioapi_0.14         ggsignif_0.6.4          officer_0.6.0          
-     [19] fontLiberation_0.1.0    listenv_0.9.0           labeling_0.4.2         
-     [22] repr_1.1.6              mets_1.3.2              farver_2.1.1           
-     [25] rprojroot_2.0.3         parallelly_1.34.0       vctrs_0.5.2            
-     [28] generics_0.1.3          TH.data_1.1-1           xfun_0.37              
-     [31] timechange_0.2.0        fontquiver_0.2.1        markdown_1.5           
-     [34] R6_2.5.1                timereg_2.0.5           cachem_1.0.7           
-     [37] promises_1.2.0.1        multcomp_1.4-22         nnet_7.3-18            
-     [40] gtable_0.3.1            globals_0.16.2          processx_3.8.0         
-     [43] sandwich_3.0-2          rlang_1.0.6             MatrixModels_0.5-1     
-     [46] systemfonts_1.0.4       rstatix_0.7.2           checkmate_2.1.0        
-     [49] yaml_2.3.7              abind_1.4-5             backports_1.4.1        
-     [52] httpuv_1.6.9            gridtext_0.1.5          tools_4.2.3            
-     [55] lava_1.7.2.1            ellipsis_0.3.2          RColorBrewer_1.1-3     
-     [58] sessioninfo_1.2.2       Rcpp_1.0.10             visNetwork_2.1.2       
-     [61] base64enc_0.1-3         prettyunits_1.1.1       ps_1.7.2               
-     [64] rpart_4.1.19            openssl_2.0.5           deldir_1.0-6           
-     [67] urlchecker_1.0.1        zoo_1.8-11              haven_2.5.2            
-     [70] cluster_2.1.4           fs_1.6.1                furrr_0.3.1            
-     [73] crul_1.3                magrittr_2.0.3          data.table_1.14.8      
-     [76] mvtnorm_1.1-3           pkgload_1.3.2           hms_1.1.2              
-     [79] mime_0.12               evaluate_0.20           xtable_1.8-4           
-     [82] jpeg_0.1-10             compiler_4.2.3          fontBitstreamVera_0.1.1
-     [85] crayon_1.5.2            later_1.3.0             tzdb_0.3.0             
-     [88] MASS_7.3-58.2           broom.helpers_1.12.0    sdamr_0.2.0            
-     [91] Matrix_1.5-3            car_3.1-1               cli_3.6.0              
-     [94] parallel_4.2.3          pkgconfig_2.0.3         km.ci_0.5-6            
-     [97] numDeriv_2016.8-1.1     foreign_0.8-84          foreach_1.5.2          
-    [100] svglite_2.1.1           rvest_1.0.3             snakecase_0.11.0       
-    [103] callr_3.7.3             digest_0.6.31           httpcode_0.3.0         
-    [106] rmarkdown_2.20          survMisc_0.5.6          htmlTable_2.4.1        
-    [109] gdtools_0.3.1           curl_5.0.0              commonmark_1.8.1       
-    [112] shiny_1.7.4             quantreg_5.94           pwr_1.3-0              
-    [115] lifecycle_1.0.3         nlme_3.1-162            jsonlite_1.8.4         
-    [118] carData_3.0-5           viridisLite_0.4.1       askpass_1.1            
-    [121] fansi_1.0.4             pillar_1.8.1            pkgbuild_1.4.0         
-    [124] fastmap_1.1.1           httr_1.4.5              remotes_2.4.2          
-    [127] zip_2.2.2               png_0.1-8               iterators_1.0.14       
-    [130] sass_0.4.5              profvis_0.3.7           stringi_1.7.12         
-    [133] polspline_1.1.22        textshaping_0.3.6       gfonts_0.2.0           
-    [136] latticeExtra_0.6-30     memoise_2.0.1           future.apply_1.10.0    
+      [1] fs_1.6.2                httr_1.4.5              RColorBrewer_1.1-3     
+      [4] repr_1.1.6              numDeriv_2016.8-1.1     profvis_0.3.8          
+      [7] tools_4.3.0             backports_1.4.1         utf8_1.2.3             
+     [10] R6_2.5.1                urlchecker_1.0.1        withr_2.5.0            
+     [13] prettyunits_1.1.1       quantreg_5.95           cli_3.6.1              
+     [16] textshaping_0.3.6       pacman_0.5.1            officer_0.6.2          
+     [19] sandwich_3.0-2          labeling_0.4.2          sass_0.4.5             
+     [22] mvtnorm_1.1-3           survMisc_0.5.6          polspline_1.1.22       
+     [25] askpass_1.1             systemfonts_1.0.4       commonmark_1.9.0       
+     [28] foreign_0.8-84          gfonts_0.2.0            svglite_2.1.1          
+     [31] parallelly_1.35.0       sessioninfo_1.2.2       pwr_1.3-0              
+     [34] rstudioapi_0.14         httpcode_0.3.0          visNetwork_2.1.2       
+     [37] generics_0.1.3          car_3.1-2               zip_2.3.0              
+     [40] Matrix_1.5-4            fansi_1.0.4             abind_1.4-5            
+     [43] lifecycle_1.0.3         multcomp_1.4-23         yaml_2.3.7             
+     [46] snakecase_0.11.0        carData_3.0-5           grid_4.3.0             
+     [49] promises_1.2.0.1        crayon_1.5.2            miniUI_0.1.1.1         
+     [52] lattice_0.21-8          haven_2.5.2             pillar_1.9.0           
+     [55] future.apply_1.10.0     codetools_0.2-19        fontLiberation_0.1.0   
+     [58] data.table_1.14.8       broom.helpers_1.13.0    remotes_2.4.2          
+     [61] vctrs_0.6.2             png_0.1-8               gtable_0.3.3           
+     [64] cachem_1.0.8            xfun_0.39               mime_0.12              
+     [67] iterators_1.0.14        lava_1.7.2.1            ellipsis_0.3.2         
+     [70] TH.data_1.1-2           nlme_3.1-162            fontquiver_0.2.1       
+     [73] rprojroot_2.0.3         rpart_4.1.19            colorspace_2.1-0       
+     [76] nnet_7.3-18             tidyselect_1.2.0        processx_3.8.1         
+     [79] compiler_4.3.0          curl_5.0.0              sdamr_0.2.0            
+     [82] rvest_1.0.3             htmlTable_2.4.1         SparseM_1.81           
+     [85] fontBitstreamVera_0.1.1 checkmate_2.2.0         callr_3.7.3            
+     [88] digest_0.6.31           rmarkdown_2.21          pkgconfig_2.0.3        
+     [91] base64enc_0.1-3         highr_0.10              fastmap_1.1.1          
+     [94] rlang_1.1.1             htmlwidgets_1.6.2       shiny_1.7.4            
+     [97] farver_2.1.1            zoo_1.8-12              jsonlite_1.8.4         
+    [100] magrittr_2.0.3          Formula_1.2-5           munsell_0.5.0          
+    [103] Rcpp_1.0.10             gdtools_0.3.3           furrr_0.3.1            
+    [106] stringi_1.7.12          MASS_7.3-59             pkgbuild_1.4.0         
+    [109] parallel_4.3.0          listenv_0.9.0           mets_1.3.2             
+    [112] gridtext_0.1.5          hms_1.1.3               ps_1.7.5               
+    [115] timereg_2.0.5           uuid_1.1-0              ggsignif_0.6.4         
+    [118] markdown_1.6            pkgload_1.3.2           crul_1.3               
+    [121] evaluate_0.20           tzdb_0.3.0              foreach_1.5.2          
+    [124] httpuv_1.6.9            MatrixModels_0.5-1      openssl_2.0.6          
+    [127] future_1.32.0           km.ci_0.5-6             xtable_1.8-4           
+    [130] rstatix_0.7.2           later_1.3.1             viridisLite_0.4.2      
+    [133] ragg_1.2.5              memoise_2.0.1           cluster_2.1.4          
+    [136] timechange_0.2.0        globals_0.16.2         

@@ -1,7 +1,7 @@
 3 - Sensitivy Analysis: Analysis ignoring competing risk
 ================
 Percy Soto-Becerra
-3/29/23
+5/7/23
 
 - <a
   href="#code-to-reproduce-results-of-the-manuscript-kidney-failure-prediction-multicenter-external-validation-of-the-kfre-model-in-patients-with-ckd-stages-3-4-in-peru"
@@ -914,12 +914,11 @@ ggsave(filename = "Plot_Calibration_cox.png",
 ### Fig S7
 
 ``` r
-plot_calibration
+knitr::include_graphics(here("Figures", "Plot_Calibration_cox.png"))
 ```
 
-<img
-src="3_Sensitivity_Analysis02_Cox_files/figure-commonmark/fig-loess-ggpplot-1.png"
-id="fig-loess-ggpplot" data-fig-align="center" />
+<img src="../Figures/Plot_Calibration_cox.png" id="fig-loess-ggpplot"
+data-fig-align="center" />
 
 ### Discrimination
 
@@ -1365,19 +1364,8 @@ res_discr_discr <-
   ) %>% 
   select(metrica, starts_with("est")) 
 
-rbind(avg_pred, avg_obs, OE_summary, res_cal, res_discr_C, res_discr_discr) -> table_performance; table_performance
+rbind(avg_pred, avg_obs, OE_summary, res_cal, res_discr_C, res_discr_discr) -> table_performance
 ```
-
-    # A tibble: 7 × 5
-      metrica                         est2ya                 est5ya    est2yb est5yb
-      <chr>                           <chr>                  <chr>     <chr>  <chr> 
-    1 "Average predicted risk"        0.96%                  3.18%     2.36%  7.66% 
-    2 "Average observed proportion"   1.58%                  3.72%     3.35%  7.88% 
-    3 "O/E ratio (95% CI)"            1.64 (1.37 to 1.97)    1.17 (1.… 1.42 … 1.03 …
-    4 "Calibration slope (95% CI)"    0.79 (0.72 to 0.85)    0.79 (0.… 0.83 … 0.83 …
-    5 "Harrell C (95% CI)"            0.856 (0.817 to 0.895) 0.856 (0… 0.85 … 0.839…
-    6 "Uno C (95% CI)"                0.856 (0.817 to 0.895) 0.851 (0… 0.851… 0.832…
-    7 " C/D AUC, at t years (95% CI)" 0.861 (0.822 to 0.9)   0.86 (0.… 0.86 … 0.846…
 
 ``` r
 table_performance %>% 
@@ -1406,11 +1394,13 @@ table_performance %>%
 
 table_perf_final %>% 
   flextable::save_as_docx(path = here("Tables/TableS12.docx"))
-
-table_perf_final
 ```
 
-![](3_Sensitivity_Analysis02_Cox_files/figure-commonmark/unnamed-chunk-12-1.png)
+``` r
+plot(table_perf_final)
+```
+
+![](3_Sensitivity_Analysis02_Cox_files/figure-commonmark/unnamed-chunk-13-1.png)
 
 ## Ticket de Reprocubilidad
 
@@ -1418,79 +1408,80 @@ table_perf_final
 sessionInfo()
 ```
 
-    R version 4.2.3 (2023-03-15 ucrt)
+    R version 4.3.0 (2023-04-21 ucrt)
     Platform: x86_64-w64-mingw32/x64 (64-bit)
-    Running under: Windows 10 x64 (build 22621)
+    Running under: Windows 11 x64 (build 22621)
 
     Matrix products: default
+
 
     locale:
     [1] LC_COLLATE=Spanish_Peru.utf8  LC_CTYPE=Spanish_Peru.utf8   
     [3] LC_MONETARY=Spanish_Peru.utf8 LC_NUMERIC=C                 
     [5] LC_TIME=Spanish_Peru.utf8    
 
+    time zone: America/Lima
+    tzcode source: internal
+
     attached base packages:
     [1] stats     graphics  grDevices utils     datasets  methods   base     
 
     other attached packages:
      [1] smplot2_0.1.0             glue_1.6.2               
-     [3] patchwork_1.1.2           flextable_0.8.6          
-     [5] gtsummary_1.7.0           gt_0.8.0                 
+     [3] patchwork_1.1.2           flextable_0.9.1          
+     [5] gtsummary_1.7.1           gt_0.9.0                 
      [7] mstate_0.3.2              cmprsk_2.2-11            
      [9] kableExtra_1.3.4          knitr_1.42               
-    [11] rms_6.5-0                 SparseM_1.81             
-    [13] riskRegression_2022.11.28 timeROC_0.4              
-    [15] pec_2022.05.04            prodlim_2019.11.13       
-    [17] Hmisc_4.8-0               Formula_1.2-5            
-    [19] lattice_0.20-45           survival_3.5-3           
-    [21] here_1.0.1                rio_0.5.29               
-    [23] lubridate_1.9.2           forcats_1.0.0            
-    [25] stringr_1.5.0             dplyr_1.1.0              
-    [27] purrr_1.0.1               readr_2.1.4              
-    [29] tidyr_1.3.0               tibble_3.1.8             
-    [31] ggplot2_3.4.1             tidyverse_2.0.0          
+    [11] rms_6.6-0                 riskRegression_2023.03.22
+    [13] timeROC_0.4               pec_2023.04.12           
+    [15] prodlim_2023.03.31        Hmisc_5.0-1              
+    [17] survival_3.5-5            here_1.0.1               
+    [19] rio_0.5.29                lubridate_1.9.2          
+    [21] forcats_1.0.0             stringr_1.5.0            
+    [23] dplyr_1.1.2               purrr_1.0.1              
+    [25] readr_2.1.4               tidyr_1.3.0              
+    [27] tibble_3.2.1              ggplot2_3.4.2            
+    [29] tidyverse_2.0.0          
 
     loaded via a namespace (and not attached):
-      [1] uuid_1.1-0              readxl_1.4.2            backports_1.4.1        
-      [4] systemfonts_1.0.4       splines_4.2.3           listenv_0.9.0          
-      [7] TH.data_1.1-1           digest_0.6.31           foreach_1.5.2          
-     [10] htmltools_0.5.4         fansi_1.0.4             memoise_2.0.1          
-     [13] magrittr_2.0.3          checkmate_2.1.0         cluster_2.1.4          
-     [16] tzdb_0.3.0              openxlsx_4.2.5.2        globals_0.16.2         
-     [19] mets_1.3.2              officer_0.6.0           sandwich_3.0-2         
-     [22] svglite_2.1.1           askpass_1.1             timechange_0.2.0       
-     [25] gfonts_0.2.0            sdamr_0.2.0             jpeg_0.1-10            
-     [28] colorspace_2.1-0        rvest_1.0.3             textshaping_0.3.6      
-     [31] haven_2.5.2             xfun_0.37               crayon_1.5.2           
-     [34] jsonlite_1.8.4          zoo_1.8-11              iterators_1.0.14       
-     [37] gtable_0.3.1            webshot_0.5.4           MatrixModels_0.5-1     
-     [40] car_3.1-1               future.apply_1.10.0     abind_1.4-5            
-     [43] scales_1.2.1            fontquiver_0.2.1        mvtnorm_1.1-3          
-     [46] rstatix_0.7.2           Rcpp_1.0.10             viridisLite_0.4.1      
-     [49] xtable_1.8-4            htmlTable_2.4.1         foreign_0.8-84         
-     [52] lava_1.7.2.1            fontLiberation_0.1.0    htmlwidgets_1.6.1      
-     [55] httr_1.4.5              RColorBrewer_1.1-3      ellipsis_0.3.2         
-     [58] farver_2.1.1            pkgconfig_2.0.3         nnet_7.3-18            
-     [61] deldir_1.0-6            utf8_1.2.3              crul_1.3               
-     [64] tidyselect_1.2.0        rlang_1.0.6             later_1.3.0            
-     [67] cachem_1.0.7            munsell_0.5.0           cellranger_1.1.0       
-     [70] tools_4.2.3             cli_3.6.0               generics_0.1.3         
-     [73] pacman_0.5.1            broom_1.0.3             evaluate_0.20          
-     [76] fastmap_1.1.1           ragg_1.2.5              yaml_2.3.7             
-     [79] timereg_2.0.5           zip_2.2.2               future_1.31.0          
-     [82] nlme_3.1-162            mime_0.12               quantreg_5.94          
-     [85] xml2_1.3.3              compiler_4.2.3          rstudioapi_0.14        
-     [88] curl_5.0.0              png_0.1-8               ggsignif_0.6.4         
-     [91] broom.helpers_1.12.0    stringi_1.7.12          gdtools_0.3.1          
-     [94] Matrix_1.5-3            fontBitstreamVera_0.1.1 vctrs_0.5.2            
-     [97] pillar_1.8.1            lifecycle_1.0.3         pwr_1.3-0              
-    [100] cowplot_1.1.1           data.table_1.14.8       httpuv_1.6.9           
-    [103] R6_2.5.1                latticeExtra_0.6-30     promises_1.2.0.1       
-    [106] gridExtra_2.3           parallelly_1.34.0       codetools_0.2-19       
-    [109] polspline_1.1.22        MASS_7.3-58.2           openssl_2.0.5          
-    [112] rprojroot_2.0.3         withr_2.5.0             httpcode_0.3.0         
-    [115] multcomp_1.4-22         parallel_4.2.3          hms_1.1.2              
-    [118] gghalves_0.1.4          grid_4.2.3              rpart_4.1.19           
-    [121] rmarkdown_2.20          carData_3.0-5           ggpubr_0.6.0           
-    [124] numDeriv_2016.8-1.1     shiny_1.7.4             base64enc_0.1-3        
-    [127] interp_1.1-3           
+      [1] rstudioapi_0.14         jsonlite_1.8.4          magrittr_2.0.3         
+      [4] TH.data_1.1-2           farver_2.1.1            pwr_1.3-0              
+      [7] rmarkdown_2.21          ragg_1.2.5              vctrs_0.6.2            
+     [10] askpass_1.1             base64enc_0.1-3         rstatix_0.7.2          
+     [13] webshot_0.5.4           htmltools_0.5.5         polspline_1.1.22       
+     [16] curl_5.0.0              haven_2.5.2             broom_1.0.4            
+     [19] cellranger_1.1.0        Formula_1.2-5           parallelly_1.35.0      
+     [22] htmlwidgets_1.6.2       sandwich_3.0-2          zoo_1.8-12             
+     [25] uuid_1.1-0              mime_0.12               lifecycle_1.0.3        
+     [28] iterators_1.0.14        pkgconfig_2.0.3         Matrix_1.5-4           
+     [31] R6_2.5.1                fastmap_1.1.1           future_1.32.0          
+     [34] shiny_1.7.4             digest_0.6.31           numDeriv_2016.8-1.1    
+     [37] colorspace_2.1-0        rprojroot_2.0.3         textshaping_0.3.6      
+     [40] ggpubr_0.6.0            fansi_1.0.4             timechange_0.2.0       
+     [43] abind_1.4-5             httr_1.4.5              compiler_4.3.0         
+     [46] fontquiver_0.2.1        withr_2.5.0             htmlTable_2.4.1        
+     [49] backports_1.4.1         carData_3.0-5           ggsignif_0.6.4         
+     [52] MASS_7.3-59             lava_1.7.2.1            quantreg_5.95          
+     [55] openssl_2.0.6           gfonts_0.2.0            tools_4.3.0            
+     [58] foreign_0.8-84          httpuv_1.6.9            zip_2.3.0              
+     [61] future.apply_1.10.0     nnet_7.3-18             sdamr_0.2.0            
+     [64] promises_1.2.0.1        mets_1.3.2              nlme_3.1-162           
+     [67] grid_4.3.0              checkmate_2.2.0         cluster_2.1.4          
+     [70] generics_0.1.3          gtable_0.3.3            tzdb_0.3.0             
+     [73] data.table_1.14.8       hms_1.1.3               car_3.1-2              
+     [76] xml2_1.3.4              utf8_1.2.3              foreach_1.5.2          
+     [79] pillar_1.9.0            later_1.3.1             splines_4.3.0          
+     [82] gghalves_0.1.4          lattice_0.21-8          SparseM_1.81           
+     [85] tidyselect_1.2.0        fontLiberation_0.1.0    fontBitstreamVera_0.1.1
+     [88] gridExtra_2.3           svglite_2.1.1           crul_1.3               
+     [91] xfun_0.39               stringi_1.7.12          yaml_2.3.7             
+     [94] pacman_0.5.1            evaluate_0.20           codetools_0.2-19       
+     [97] httpcode_0.3.0          officer_0.6.2           gdtools_0.3.3          
+    [100] cli_3.6.1               rpart_4.1.19            xtable_1.8-4           
+    [103] systemfonts_1.0.4       munsell_0.5.0           Rcpp_1.0.10            
+    [106] readxl_1.4.2            globals_0.16.2          png_0.1-8              
+    [109] parallel_4.3.0          ellipsis_0.3.2          MatrixModels_0.5-1     
+    [112] listenv_0.9.0           viridisLite_0.4.2       broom.helpers_1.13.0   
+    [115] mvtnorm_1.1-3           timereg_2.0.5           scales_1.2.1           
+    [118] openxlsx_4.2.5.2        crayon_1.5.2            rlang_1.1.1            
+    [121] cowplot_1.1.1           rvest_1.0.3             multcomp_1.4-23        
